@@ -141,6 +141,7 @@ step(function (next) {
     assert.strictEqual(r.inChain, false);
     assert.deepEqual(r.choices.map(function (c) { return c.id; }),
       ['media:playPause', 'media:play', 'media:pause', 'media:stop', 'media:rewind', 'media:fastForward',
+       'media:volumeUp', 'media:volumeDown', 'media:mute',
        'com.webos.app.hdmi1', 'com.webos.app.hdmi2', 'com.webos.app.livetv', 'netflix', 'youtube.leanback.v4']);
     console.log('  ✓ only the keys the TV\'s filters name are offered, each as LG has it, with the media controls, inputs and apps a key can open');
     next();
@@ -247,6 +248,14 @@ step(function (next) {
         assert.deepEqual(keyCodes(f), [128, 207, 119, 207, 119]);
         assert.strictEqual(f.launched.length, 0);
         tv.acb = tv.media = undefined;
+        // Volume repeats while held, as the remote's own key does; mute does not.
+        f.tell({ keys: { amazon: 'media:volumeUp', red: 'media:mute' } });
+        f.handle(1002, true, false);
+        f.handle(1002, true, true);
+        f.handle(1002, false, false);
+        f.handle(1004, true, false);
+        f.handle(1004, true, true);
+        assert.deepEqual(keyCodes(f).slice(5), [115, 115, 113]);
         rk.getRemoteKeys(guard(function (r) {
           var red = r.keys.filter(function (k) { return k.key === 'red'; })[0];
           assert.strictEqual(red.action, 'open');
@@ -254,7 +263,7 @@ step(function (next) {
           rk.setRemoteKey('red', 'lg', '', guard(function () {
             rk.setRemoteKey('amazon', 'lg', '', guard(function () {
               assert.deepEqual(tv.keys.keys, { netflix: 'youtube.leanback.v4', guide: '' });
-              console.log('  ✓ a key set to a media control sends its key code once per press, Play/pause as what is playing calls for; an unknown control is refused');
+              console.log('  ✓ a key set to a media control sends its key code once per press, or while held for volume, Play/pause as what is playing calls for; an unknown control is refused');
               next();
             }));
           }));

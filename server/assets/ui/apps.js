@@ -455,6 +455,8 @@ const RK_GROUPS = [
 ];
 // The colour keys' own colours, the one place colour is the key's name.
 const RK_COLOURS = { red: 'var(--red)', green: 'var(--green)', yellow: '#f2c230', blue: 'var(--blue)' };
+// The volume controls' own glyphs; the rest share the play/pause one.
+const RK_MEDIA_GLYPHS = { 'media:volumeUp': '🔊', 'media:volumeDown': '🔉', 'media:mute': '🔇' };
 let rkData = null;     // the last remoteKeys answer, for the picker
 let rkOpen = null;     // the key whose picker is open
 let rkCols = 0;        // the columns its grid had when it opened
@@ -470,7 +472,7 @@ function rkDoes(k, kindOf) {
   if (k.action === 'lg') return `<span class="rk-lg">${esc(t('apps.remoteKeys.lg', 'As LG has it'))}</span>`;
   if (k.action === 'nothing') return `<span class="rk-none" aria-hidden="true">⦸</span>${esc(t('apps.remoteKeys.doesNothing', 'Does nothing'))}`;
   if (kindOf(k.id) === 'switcher') return `<span class="rk-none" aria-hidden="true">⇄</span>${esc(t('apps.remoteKeys.inputSwitcher', 'Input switcher'))}`;
-  if (kindOf(k.id) === 'media') return `<span class="rk-none" aria-hidden="true">⏯</span>${esc(k.opens)}`;
+  if (kindOf(k.id) === 'media') return `<span class="rk-none" aria-hidden="true">${RK_MEDIA_GLYPHS[k.id] || '⏯'}</span>${esc(k.opens)}`;
   const icon = kindOf(k.id) === 'app' ? rkIcon(k.id) : '';
   return `${icon}<span translate="no">${esc(k.opens)}</span>`;
 }

@@ -4739,6 +4739,10 @@
   "text": "TV en directo",
   "from": "Live TV"
  },
+ "srv.remoteKeys.mute": {
+  "text": "Silencio",
+  "from": "Mute"
+ },
  "srv.remoteKeys.noApps": {
   "text": "No se pudieron leer las apps de la TV. Inténtalo de nuevo en un momento.",
   "from": "Could not read the TV's apps. Try again in a moment."
@@ -4774,6 +4778,14 @@
  "srv.remoteKeys.unknownApp": {
   "text": "Esa app no está en esta TV",
   "from": "That app is not on this TV"
+ },
+ "srv.remoteKeys.volumeDown": {
+  "text": "Bajar volumen",
+  "from": "Volume down"
+ },
+ "srv.remoteKeys.volumeUp": {
+  "text": "Subir volumen",
+  "from": "Volume up"
  },
  "srv.repo.notCatalog": {
   "text": "no es un catálogo de paquetes: {url}",

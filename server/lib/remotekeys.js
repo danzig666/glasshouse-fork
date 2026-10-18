@@ -101,11 +101,17 @@ var APP_PREFIX = 'com.webos.app.';
  * gets it as a play or pause key; no media key is one this filter takes. The
  * codes are controls.js's RCU_KEY_CODES, measured on a B8: no key toggles the
  * built-in player, so Play/pause asks what is playing and sends the other.
- * webOS 11's native filters launch apps only, so they are not offered there.
+ * Volume up and down are the codes controls.js sends for one step, which a
+ * receiver on HDMI ARC follows too; they repeat while the key is held, as the
+ * remote's own do. Mute is KEY_MUTE, a toggle like the remote's. webOS 11's native filters launch apps only, so they are not offered there.
  */
 var MEDIA_PREFIX = 'media:';
-var MEDIA_CODES = { play: 207, pause: 119, stop: 128, rewind: 168, fastForward: 208 };
-var MEDIA_ACTIONS = ['playPause', 'play', 'pause', 'stop', 'rewind', 'fastForward'];
+var MEDIA_CODES = {
+  play: 207, pause: 119, stop: 128, rewind: 168, fastForward: 208,
+  volumeUp: 115, volumeDown: 114, mute: 113
+};
+var MEDIA_ACTIONS = ['playPause', 'play', 'pause', 'stop', 'rewind', 'fastForward', 'volumeUp', 'volumeDown', 'mute'];
+var MEDIA_REPEATS = { volumeUp: true, volumeDown: true };
 
 // webOS 11's native key filters; see the header.
 var NATIVE_FILTERS_KEY = 'com.webos.surfacemanager.keyFiltersCpp';
@@ -318,6 +324,7 @@ function filterSource() {
     'var glasshouseHoldingHome = false;',
     'var glasshouseHoldOver = false;',
     'var glasshouseMediaCodes = ' + JSON.stringify(MEDIA_CODES) + ';',
+    'var glasshouseMediaRepeats = ' + JSON.stringify(MEDIA_REPEATS) + ';',
     '',
     '// Key code by name; a name this firmware lacks is left out.',
     'function glasshouseKeyCodes() {',
@@ -433,9 +440,12 @@ function filterSource() {
     '        }',
     '        if (!glasshouseKeyIds.hasOwnProperty(key)) return KeyPolicy.NextPolicy;',
     '        var id = glasshouseKeyIds[key];',
-    '        if (pressed && !autoRepeat && id.indexOf(' + JSON.stringify(MEDIA_PREFIX) + ') === 0) {',
-    '            console.info("glasshouse keyfilter: key", key, "sends", id);',
-    '            glasshouseMedia(id.substring(' + MEDIA_PREFIX.length + '));',
+    '        if (id.indexOf(' + JSON.stringify(MEDIA_PREFIX) + ') === 0) {',
+    '            var media = id.substring(' + MEDIA_PREFIX.length + ');',
+    '            if (pressed && (!autoRepeat || glasshouseMediaRepeats.hasOwnProperty(media))) {',
+    '                if (!autoRepeat) console.info("glasshouse keyfilter: key", key, "sends", id);',
+    '                glasshouseMedia(media);',
+    '            }',
     '        } else if (pressed && !autoRepeat && id) {',
     '            console.info("glasshouse keyfilter: key", key, "opens", id);',
     '            applicationManager.launch(id, "{}");',
@@ -1123,7 +1133,10 @@ function mediaChoices() {
     pause: msg('srv.remoteKeys.pause', 'Pause'),
     stop: msg('srv.remoteKeys.stop', 'Stop'),
     rewind: msg('srv.remoteKeys.rewind', 'Rewind'),
-    fastForward: msg('srv.remoteKeys.fastForward', 'Fast forward')
+    fastForward: msg('srv.remoteKeys.fastForward', 'Fast forward'),
+    volumeUp: msg('srv.remoteKeys.volumeUp', 'Volume up'),
+    volumeDown: msg('srv.remoteKeys.volumeDown', 'Volume down'),
+    mute: msg('srv.remoteKeys.mute', 'Mute')
   };
   return MEDIA_ACTIONS.map(function (a) { return { id: MEDIA_PREFIX + a, title: titles[a], kind: 'media' }; });
 }
