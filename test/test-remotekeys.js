@@ -84,13 +84,10 @@ function loadFilter(broken) {
       subscribe: function (service, method, payload, cb) {
         subscribed = { service: service, method: method, payload: JSON.parse(payload), cb: cb };
       },
-      // sam answers for LG's Home with the type tv.homeType gives, the media
-      // services with tv.acb and tv.media.
+      // sam answers for LG's Home with the type tv.homeType gives.
       send: function (service, method, payload, cb) {
         sent.push({ uri: service + method, payload: JSON.parse(payload) });
         if (method === '/getAppInfo') cb(JSON.stringify({ returnValue: true, appInfo: { type: tv.homeType } }));
-        else if (service === 'com.webos.service.acb') cb(JSON.stringify(tv.acb || { returnValue: true, acbs: [] }));
-        else if (service === 'com.webos.media') cb(JSON.stringify(tv.media || { returnValue: true, foregroundAppInfo: [] }));
         else if (cb) cb(JSON.stringify({ returnValue: true }));
       }
     },
@@ -140,7 +137,7 @@ step(function (next) {
     assert.ok(r.keys.every(function (k) { return k.action === 'lg' && k.id === ''; }));
     assert.strictEqual(r.inChain, false);
     assert.deepEqual(r.choices.map(function (c) { return c.id; }),
-      ['media:playPause', 'media:play', 'media:pause', 'media:stop', 'media:rewind', 'media:fastForward',
+      ['media:play', 'media:pause', 'media:stop', 'media:rewind', 'media:fastForward',
        'media:volumeUp', 'media:volumeDown', 'media:mute',
        'com.webos.app.hdmi1', 'com.webos.app.hdmi2', 'com.webos.app.livetv', 'netflix', 'youtube.leanback.v4']);
     console.log('  ✓ only the keys the TV\'s filters name are offered, each as LG has it, with the media controls, inputs and apps a key can open');
@@ -220,7 +217,7 @@ step(function (next) {
 });
 
 step(function (next) {
-  rk.setRemoteKey('red', 'open', 'media:playPause', guard(function (s1) {
+  rk.setRemoteKey('red', 'open', 'media:pause', guard(function (s1) {
     assert.strictEqual(s1.ok, true);
     rk.setRemoteKey('amazon', 'open', 'media:stop', guard(function (s2) {
       assert.strictEqual(s2.ok, true);
@@ -234,20 +231,9 @@ step(function (next) {
         assert.strictEqual(f.handle(1002, true, false), 'accepted');
         assert.strictEqual(f.handle(1002, false, false), 'accepted');
         assert.deepEqual(keyCodes(f), [128]);
-        // Nothing playing: play. The built-in player playing: pause.
         assert.strictEqual(f.handle(1004, true, false), 'accepted');
-        tv.acb = { returnValue: true, acbs: [{ playStateNow: 'playing', playerType: 'file' }] };
-        f.handle(1004, true, false);
-        // An HDMI input reports playing whatever the box does; play toggles it over CEC.
-        tv.acb = { returnValue: true, acbs: [{ playStateNow: 'playing', playerType: 'external input' }] };
-        f.handle(1004, true, false);
-        // No acb: the media service's answer.
-        tv.acb = { returnValue: false, errorText: 'Service does not exist' };
-        tv.media = { returnValue: true, foregroundAppInfo: [{ playState: 'playing', type: 'media' }] };
-        f.handle(1004, true, false);
-        assert.deepEqual(keyCodes(f), [128, 207, 119, 207, 119]);
+        assert.deepEqual(keyCodes(f), [128, 119]);
         assert.strictEqual(f.launched.length, 0);
-        tv.acb = tv.media = undefined;
         // Volume repeats while held, as the remote's own key does; mute does not.
         f.tell({ keys: { amazon: 'media:volumeUp', red: 'media:mute' } });
         f.handle(1002, true, false);
@@ -255,15 +241,15 @@ step(function (next) {
         f.handle(1002, false, false);
         f.handle(1004, true, false);
         f.handle(1004, true, true);
-        assert.deepEqual(keyCodes(f).slice(5), [115, 115, 113]);
+        assert.deepEqual(keyCodes(f).slice(2), [115, 115, 113]);
         rk.getRemoteKeys(guard(function (r) {
           var red = r.keys.filter(function (k) { return k.key === 'red'; })[0];
           assert.strictEqual(red.action, 'open');
-          assert.strictEqual(red.opens, 'Play/pause');
+          assert.strictEqual(red.opens, 'Pause');
           rk.setRemoteKey('red', 'lg', '', guard(function () {
             rk.setRemoteKey('amazon', 'lg', '', guard(function () {
               assert.deepEqual(tv.keys.keys, { netflix: 'youtube.leanback.v4', guide: '' });
-              console.log('  ✓ a key set to a media control sends its key code once per press, or while held for volume, Play/pause as what is playing calls for; an unknown control is refused');
+              console.log('  ✓ a key set to a media control sends its key code once per press, or while held for volume; an unknown control is refused');
               next();
             }));
           }));

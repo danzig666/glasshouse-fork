@@ -591,10 +591,7 @@ the same codes as the dashboard's media buttons (play 207, pause 119, stop 128,
 rewind 168, fast forward 208, volume up 115, volume down 114, mute 113;
 volume repeats while the key is held). Those keys go through the chain again, and the
 filter names none of them, so they reach LG's filters and the app in front.
-No key toggles the built-in player, so **Play/pause** first asks
-`com.webos.service.acb/getForegroundAppInfo`, or `com.webos.media`'s where acb
-is missing, and sends pause only where something other than an HDMI input is
-playing. LG's files are never written. configd has no way to
+LG's files are never written. configd has no way to
 delete a value, so **As LG has it** on every key leaves the filter in the
 chain, passing every key on, and `tvwebctl restore-keys` takes it out, deletes
 the file and leaves `glasshouse.remoteKeys` as an empty map.

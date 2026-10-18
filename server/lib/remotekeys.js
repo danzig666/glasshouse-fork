@@ -99,18 +99,20 @@ var APP_PREFIX = 'com.webos.app.';
  * Linux key code through the network input service, whose keys go through the
  * filter chain like the remote's own (TV-RESEARCH.md), so the app in front
  * gets it as a play or pause key; no media key is one this filter takes. The
- * codes are controls.js's RCU_KEY_CODES, measured on a B8: no key toggles the
- * built-in player, so Play/pause asks what is playing and sends the other.
- * Volume up and down are the codes controls.js sends for one step, which a
- * receiver on HDMI ARC follows too; they repeat while the key is held, as the
- * remote's own do. Mute is KEY_MUTE, a toggle like the remote's. webOS 11's native filters launch apps only, so they are not offered there.
+ * codes are controls.js's RCU_KEY_CODES, measured on a B8. Volume up and down
+ * are the codes controls.js sends for one step, which a receiver on HDMI ARC
+ * follows too; they repeat while the key is held, as the remote's own do.
+ * Mute is KEY_MUTE, a toggle like the remote's. Each worked on a C3 (webOS
+ * 10.2.2). A play/pause toggle, asking acb what was playing first, did
+ * nothing there, so none is offered. webOS 11's native filters launch apps
+ * only, so they are not offered there.
  */
 var MEDIA_PREFIX = 'media:';
 var MEDIA_CODES = {
   play: 207, pause: 119, stop: 128, rewind: 168, fastForward: 208,
   volumeUp: 115, volumeDown: 114, mute: 113
 };
-var MEDIA_ACTIONS = ['playPause', 'play', 'pause', 'stop', 'rewind', 'fastForward', 'volumeUp', 'volumeDown', 'mute'];
+var MEDIA_ACTIONS = ['play', 'pause', 'stop', 'rewind', 'fastForward', 'volumeUp', 'volumeDown', 'mute'];
 var MEDIA_REPEATS = { volumeUp: true, volumeDown: true };
 
 // webOS 11's native key filters; see the header.
@@ -360,32 +362,8 @@ function filterSource() {
     '    lunaCall.send("com.webos.service.networkinput", "/test/sendKeyCode", JSON.stringify({ "keyCode": code }), function () {});',
     '}',
     '',
-    '// Pause where the built-in player or an app says it is playing, else play:',
-    '// an HDMI input reports playing whatever the box does, and play toggles it over CEC.',
-    'function glasshousePlayPause() {',
-    '    var answer = function (state, type) {',
-    '        glasshouseSendKey(state === "playing" && type !== "external input" ? glasshouseMediaCodes.pause : glasshouseMediaCodes.play);',
-    '    };',
-    '    var parse = function (payload) {',
-    '        try { return typeof payload === "string" ? JSON.parse(payload) : payload; } catch (e) { return null; }',
-    '    };',
-    '    lunaCall.send("com.webos.service.acb", "/getForegroundAppInfo", "{}", function (payload) {',
-    '        var r = parse(payload);',
-    '        var pipe = r && r.acbs && r.acbs[0];',
-    '        if (pipe && pipe.playStateNow) return answer(String(pipe.playStateNow), pipe.playerType);',
-    '        lunaCall.send("com.webos.media", "/getForegroundAppInfo", "{}", function (payload2) {',
-    '            var m = parse(payload2), list = (m && m.foregroundAppInfo) || [];',
-    '            for (var i = 0; i < list.length; i++) {',
-    '                if (list[i] && list[i].playState) return answer(String(list[i].playState), list[i].type);',
-    '            }',
-    '            answer("", "");',
-    '        });',
-    '    });',
-    '}',
-    '',
     '// Sends the media key a key is set to, by its name after ' + JSON.stringify(MEDIA_PREFIX) + '.',
     'function glasshouseMedia(name) {',
-    '    if (name === "playPause") return glasshousePlayPause();',
     '    if (glasshouseMediaCodes.hasOwnProperty(name)) glasshouseSendKey(glasshouseMediaCodes[name]);',
     '}',
     '',
@@ -1128,7 +1106,6 @@ function switcherChoices(cb) {
 // The media controls a key can send, where the JavaScript filter runs.
 function mediaChoices() {
   var titles = {
-    playPause: msg('srv.remoteKeys.playPause', 'Play/pause'),
     play: msg('srv.remoteKeys.play', 'Play'),
     pause: msg('srv.remoteKeys.pause', 'Pause'),
     stop: msg('srv.remoteKeys.stop', 'Stop'),
