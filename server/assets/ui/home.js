@@ -100,6 +100,14 @@ function renderHome() {
     updateToggle(pic, { cls: on ? 'good' : 'idle', label: on ? t('common.on', 'On') : t('common.off', 'Off') });
     pic.disabled = !homeWritable();
   }
+  const srcRow = q('home-source-row');
+  if (srcRow) srcRow.hidden = !st.supported.ok;
+  const src = q('home-source');
+  if (src) {
+    const on = !st.layout || st.layout.showSource !== false;
+    updateToggle(src, { cls: on ? 'good' : 'idle', label: on ? t('common.on', 'On') : t('common.off', 'Off') });
+    src.disabled = !homeWritable();
+  }
   const hide = q('home-hide-lg');
   if (hide) {
     const armed = homeArmed === 'hide';
@@ -332,6 +340,10 @@ async function homeHideLg() {
 
 function homePicture() {
   homeSaveLayout({ picture: homeLayout.picture !== true });
+}
+
+function homeSource() {
+  homeSaveLayout({ showSource: homeLayout.showSource === false });
 }
 
 // Added channels are the Channels row; this finds more to add. Built once, then only its list redraws.

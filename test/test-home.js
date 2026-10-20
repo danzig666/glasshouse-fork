@@ -1077,6 +1077,24 @@ step('the picture details stay off until switched on, and the server is told of 
   });
 });
 
+step('what was last on shows until switched off, apart from the picture details, and a file from before keeps it on', function (done) {
+  start(null);
+  assert.strictEqual(home.layout().showSource, true);
+  assert.strictEqual(home.normalise({}).showSource, true, 'a home.json from before the switch keeps it on');
+  home.setLayout({ showSource: false }, function (r) {
+    assert.strictEqual(r.layout.showSource, false);
+    assert.strictEqual(r.layout.picture, false, 'the picture details are a switch of their own');
+    home.setLayout({ hintSeen: true, showSource: 'no' }, function (r2) {
+      assert.strictEqual(r2.layout.showSource, false, 'kept when not sent as a boolean');
+      assert.strictEqual(home.normalise(JSON.parse(fs.readFileSync(path.join(dir, 'home.json'), 'utf8'))).showSource, false);
+      home.setLayout({ showSource: true }, function (r3) {
+        assert.strictEqual(r3.layout.showSource, true);
+        done();
+      });
+    });
+  });
+});
+
 step('only #rrggbb colours are kept, since the view writes them into its stylesheet', function (done) {
   start(null);
   var invalid = [

@@ -259,7 +259,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   var BEAT_MS = 5000;
 
   var data = null;       // the catalogue: apps, devices, channels, order
-  var layout = null;     // rows, order, sort, hidden, channels, hintSeen, picture
+  var layout = null;     // rows, order, sort, hidden, channels, hintSeen, picture, showSource
   var guideData = {};
   var lastOn = { kind: null };
   // last: the tile focused last, which the bar's Hide or show acts on.
@@ -497,7 +497,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       title = lastOn.title;
       via = t('home.now.app', 'App on this TV');
     }
-    $('source').className = title ? '' : 'none';
+    // Hidden, not removed, when switched off, so the plate keeps its place.
+    $('source').className = title && !(layout && layout.showSource === false) ? '' : 'none';
     $('srcKind').textContent = kind || ' ';
     $('srcTitle').textContent = title || ' ';
     $('srcVia').textContent = via || ' ';
@@ -506,8 +507,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   /*
    * The plate. An input's signal is read off its receiver, so it is there
    * while Home is; an app's is the last video it played, noted by the server
-   * while it played. A channel has none, and shows the mode it gets in SDR;
-   * an app that has played nothing shows no plate.
+   * while it played. A channel has none, and shows the mode it gets in SDR,
+   * as does an app with no video noted yet or an input with nothing coming in.
+   * A failed refresh keeps what the plate showed.
    */
   var picture = null;
   var pictureRevision = 0;
@@ -531,8 +533,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       renderPicture();
     }
     getJson('/api/home/picture?kind=' + kind + which, function (r) {
-      if (revision !== pictureRevision) return;
-      picture = r && r.ok ? r : null;
+      if (revision !== pictureRevision || !r || !r.ok) return;
+      picture = r;
       renderPicture();
     });
   }
@@ -555,6 +557,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       if (s.allm) sig.push(t('home.plate.allm', 'Low latency'));
     } else if (lastOn.kind === 'input') {
       sig.push(t('home.plate.noSignal', 'No picture coming in'));
+    } else if (lastOn.kind === 'app') {
+      sig.push(t('home.plate.noVideo', 'No video noted yet'));
     }
     $('plSig').innerHTML = sig.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('');
     $('plMode').textContent = p.mode ? p.mode.display : '';
@@ -1101,6 +1105,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       layout = r.layout;
       applyColours(layout.colours);
       if (r.layoutVersion) layoutVersion = r.layoutVersion;
+      renderNow();
       refreshPicture();
       clearTimeout(loadRetry);
       wallAvailable = !!(r.wallpapers && r.wallpapers.available);
