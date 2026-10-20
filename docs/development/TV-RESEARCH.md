@@ -1296,3 +1296,20 @@ switch"; `WoV PDM Mic` on ALSA card 1) and a switch for it on the TV.
 showed a toast saying the microphone is off. Before the flip, in Active
 Standby, voice activation was already off with reason `tvPowerState`, so
 wake-word listening does not run in standby.
+
+## Shaders in the screen saver runner (webOS 10.2.2, C3)
+
+- **No ShaderEffect compiles.** Under `qml-runner` (Qt 5.12.12), with
+  `GraphicsInfo` reporting OpenGL ES 3.2 and runtime GLSL compilation, every
+  `ShaderEffect` ended with status Error and an empty `log`: a full raymarching
+  shader, and a one-line fragment shader writing `qt_TexCoord0`, inside a
+  layer or not. The same shaders compile in WebGL 1 (GLSL ES 1.00).
+- **Not LG's two scene graph settings.** The runner's environment has
+  `QMLSCENE_DEVICE=customcontext` and
+  `QSG_PROGRAM_BINARY_STORE=/var/cache/qsg-shader-cache`, a directory that
+  does not exist. Started by hand with that environment, the one-line shader
+  failed the same way with either or both unset.
+- **Its messages go to LG's logger.** `console.log`, `QSG_INFO=1` and
+  `QT_LOGGING_TO_CONSOLE=1` printed nothing on the terminal, and nothing
+  reached `journalctl` or `/var/log/messages`; a result has to be shown on
+  screen to be read.
