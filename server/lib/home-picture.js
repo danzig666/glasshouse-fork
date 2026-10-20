@@ -139,9 +139,11 @@ function savePlayed() {
 function notePlaying(reply) {
   var seen = appVideo(reply);
   if (!seen) return;
-  var before = played[seen.appId];
-  if (before && JSON.stringify(before) === JSON.stringify(seen.signal)) return;
-  // Newest last, so the oldest are the ones dropped.
+  var before = played[seen.appId], ids = Object.keys(played);
+  // getStatus pushes while a video plays: unchanged and already newest is
+  // written once, not at every push.
+  if (before && JSON.stringify(before) === JSON.stringify(seen.signal) && ids[ids.length - 1] === seen.appId) return;
+  // Newest last, so the apps played longest ago are the ones dropped.
   delete played[seen.appId];
   played[seen.appId] = seen.signal;
   delete cache['app:' + seen.appId];

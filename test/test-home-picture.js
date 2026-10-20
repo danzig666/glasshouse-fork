@@ -196,8 +196,13 @@ console.log('  ✓ tracking runs while Home, picture details and the TV are on, 
 (function () {
   var os = require('os');
   var dir = path.join(os.tmpdir(), 'tvweb-home-picture-' + process.pid);
-  fs.mkdirSync(dir);
   var file = path.join(dir, 'home-picture.json');
+  function clean() {
+    [file, file + '.tmp'].forEach(function (f) { try { fs.unlinkSync(f); } catch (e) {} });
+    try { fs.rmdirSync(dir); } catch (e) {}
+  }
+  clean();
+  fs.mkdirSync(dir);
   var push;
   var youtube = { video: [{ sink: 'MAIN', connected: true, connectedSource: 'VDEC', appId: 'com.cobalt.youtube.adfree',
     width: 1920, height: 1080, frameRate: 60, fullScreen: false, videoInfo: { hdrType: 'none' } }] };
@@ -237,7 +242,12 @@ console.log('  ✓ tracking runs while Home, picture details and the TV are on, 
   assert.equal(kept[kept.length - 1], 'app44');
   assert.ok(kept.indexOf('com.cobalt.youtube.adfree') === -1 && kept.indexOf('app4') === -1 && kept.indexOf('app5') !== -1);
   assert.ok(written > 0);
-  console.log('  ✓ noted videos survive a restart, are written only when they change, and the 40 last noted are kept');
+  // Played again, an app moves to newest, so it is not the next dropped.
+  push(JSON.parse(JSON.stringify(youtube).replace('com.cobalt.youtube.adfree', 'app5')));
+  kept = Object.keys(JSON.parse(fs.readFileSync(file, 'utf8')).played);
+  assert.equal(kept[kept.length - 1], 'app5');
+  clean();
+  console.log('  ✓ noted videos survive a restart, are written only when they change, the app played last is newest, and the 40 last noted are kept');
 })();
 
 var status = FILES['/proc/lg/hdmi20/port0/status'];

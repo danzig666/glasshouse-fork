@@ -53,6 +53,24 @@ that answers `no result from DB`.
 `luna://com.webos.service.capture/executeOneShot` with `method: DISPLAY`
 writes a PNG of the screen, web apps included, at the size asked for.
 
+## The picture of an app and an input behind Home (C3, webOS 10.2.2)
+
+- **videooutput names an app's video as on the G3.** YouTube (Cobalt)
+  playing: `MAIN` sink, `connected: true`, `connectedSource: VDEC`, the
+  foreground app's id, 1920x1080, `frameRate: 60`, `hdrType: none`, and
+  `fullScreen: false` while it filled the screen.
+- **Both settings service names answer, alike.**
+  `com.webos.service.settings` and `com.webos.settingsservice`
+  `getSystemSettings` gave the same: with no dimension, while an app was on,
+  `dimension: {input: 'default', dynamicRange: 'sdr', pictureMode:
+  'expert1'}` and `backlight: 100`; with `{input: 'default', dynamicRange}`
+  the SDR mode `expert1` and the HDR mode `hdrCinemaBright`, at once,
+  whether or not a video had played.
+- **The receivers read behind Home.** `/proc/lg/hdmi20/` has `port0` to
+  `port4`; with Home on screen `port2` still read a source's
+  `Sig:[720]x[481]@[60]Hz` with `cvi_vfreq[-1]`, a rate the status gives
+  only in Sig. `port4` had no `status`.
+
 ## Home input titles (G3, webOS 9.2.2)
 
 HDMI launch points added by Glasshouse are bookmarks with `systemApp: false`.

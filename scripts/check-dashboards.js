@@ -148,7 +148,13 @@ async function visitHomePicture(browser, base, problems) {
     signal: { width: 3840, height: 2160, hz: 24, chroma: 'YCbCr 4:4:4', bits: 10, hdr: 'hdr10' } };
   const netflix = { ok: true, range: 'dolbyHdr', mode: { display: 'Dolby Vision Cinema Bright' }, light: 100, oled: true,
     signal: { width: 3840, height: 2160, hz: 23.98, hdr: 'dolby_vision', played: true } };
-  const asleep = { ok: true, range: null, mode: null, light: null, oled: true, signal: null };
+  // With no signal to go by, the server gives the mode the source gets in SDR.
+  const asleep = { ok: true, range: 'sdr', assumed: true, mode: { display: 'Filmmaker' }, light: 90, oled: true, signal: null };
+  const noVideo = { ok: true, range: 'sdr', assumed: true, mode: { display: 'ISF Expert (Bright)' }, light: 100, oled: true, signal: null };
+  // The TV's settings service not answering this time.
+  const noMode = { ok: true, range: 'dolbyHdr', mode: null, light: null, oled: true,
+    signal: { width: 3840, height: 2160, hz: 23.98, hdr: 'dolby_vision', played: true } };
+  let modeFails = false;
   let source = { kind: 'input', port: 4, title: 'HDMI 4' };
   let releaseCatalogue = null, latePicture = null, holdPicture = false, pictureReads = 0;
   const reply = (route, body) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
@@ -167,7 +173,9 @@ async function visitHomePicture(browser, base, problems) {
     if (url.pathname.endsWith('/now')) return reply(route, source);
     if (url.pathname.endsWith('/picture')) {
       pictureReads++;
-      const body = url.searchParams.get('kind') === 'app' ? netflix : url.searchParams.get('port') === '2' ? asleep : hdmi4;
+      const app = url.searchParams.get('app');
+      const body = url.searchParams.get('kind') === 'app' ? (app === 'youtube' ? noVideo : modeFails ? noMode : netflix)
+        : url.searchParams.get('port') === '2' ? asleep : hdmi4;
       if (holdPicture) {
         holdPicture = false;
         latePicture = () => reply(route, body);
@@ -207,14 +215,18 @@ async function visitHomePicture(browser, base, problems) {
     if (await page.locator('#plStrip > div').count() !== 1) problems.push('Home picture: the strip held more than the OLED light');
     source = { kind: 'input', port: 2, title: 'HDMI 2' };
     await returned();
-    await page.waitForFunction(() => document.getElementById('plSig').textContent === 'No picture coming in');
+    await page.waitForFunction(() => document.getElementById('plSig').textContent === 'No picture coming inSDR mode');
     const level = await page.evaluate(() => {
       const top = id => document.getElementById(id).getBoundingClientRect().top;
-      return { shown: document.getElementById('plMode').textContent + document.getElementById('plStrip').textContent,
+      return { mode: document.getElementById('plMode').textContent, strip: document.getElementById('plStrip').textContent,
         off: Math.abs(top('plSig') - top('srcKind')) };
     });
-    if (level.shown) problems.push('Home picture: no signal still showed a mode or OLED light');
+    if (level.mode !== 'Filmmaker' || level.strip !== 'OLED light90') problems.push('Home picture: no signal did not show the SDR mode and its OLED light');
     if (level.off > 1) problems.push('Home picture: no signal left its line off the source\'s first line');
+    source = { kind: 'app', appId: 'youtube', title: 'YouTube' };
+    await returned();
+    await page.waitForFunction(() => document.getElementById('plSig').textContent === 'No video noted yetSDR mode');
+    if (await page.locator('#plMode').textContent() !== 'ISF Expert (Bright)') problems.push('Home picture: an app with no video noted did not show its SDR mode');
     source = { kind: 'input', port: 4, title: 'HDMI 4' };
     await returned();
     await page.waitForFunction(() => document.getElementById('plMode').textContent === 'HDR Filmmaker');
@@ -225,6 +237,18 @@ async function visitHomePicture(browser, base, problems) {
     await latePicture();
     await page.waitForTimeout(100);
     if (await page.locator('#plMode').textContent() !== 'Dolby Vision Cinema Bright') problems.push('Home picture: a late HDMI reply replaced the app picture');
+    // A refresh where the TV gave no mode keeps the mode shown.
+    modeFails = true;
+    await page.clock.fastForward(15000);
+    await page.waitForTimeout(150);
+    if (await page.locator('#plMode').textContent() !== 'Dolby Vision Cinema Bright') problems.push('Home picture: a refresh with no mode blanked the mode shown');
+    modeFails = false;
+    // What was last on is a switch of its own.
+    layout.showSource = false;
+    await returned();
+    if (await page.locator('#source').isVisible()) problems.push('Home picture: What was last on switched off still showed the source');
+    if (!(await page.locator('#plate').isVisible())) problems.push('Home picture: What was last on switched off hid the plate');
+    delete layout.showSource;
     await delayPicture();
     layout.picture = false;
     await returned();
@@ -232,6 +256,111 @@ async function visitHomePicture(browser, base, problems) {
     await latePicture();
     await page.waitForTimeout(100);
     if (await page.locator('#plate').isVisible()) problems.push('Home picture: a late reply restored a disabled plate');
+  } finally { await page.close(); }
+}
+
+// The Magic Remote's pointer on a row of 30 apps: hover only focuses, resting
+// at the screen's side glides the row, a click opens the tile under the
+// pointer, the wheel scrolls, the keys go on from what is in view, and
+// closing Recent apps while its cards glide leaves the rows scrolling.
+async function visitHomeScrolling(browser, base, problems) {
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  page.on('pageerror', e => problems.push('Home scrolling: ' + e.message));
+  const apps = Array.from({ length: 30 }, (_, i) => ({ id: 'app' + i, title: 'App ' + i }));
+  const layout = { rows: ['app', 'dev', 'ch'], order: { app: [], dev: [], ch: [] },
+    hidden: { app: [], dev: [], ch: [] }, channels: [], hintSeen: true };
+  const opened = [];
+  await page.route('**/api/home/**', route => {
+    const url = new URL(route.request().url());
+    const reply = body => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    if (url.pathname.endsWith('/catalogue')) {
+      return reply({ ok: true, layout, apps, devices: [{ id: 'hdmi1:box', name: 'Box', port: 1 }], channels: [],
+        sources: { channels: 0 }, order: { app: apps.map(a => a.id), dev: ['hdmi1:box'], ch: [] } });
+    }
+    if (url.pathname.endsWith('/now')) return reply({ kind: null });
+    if (url.pathname.endsWith('/open')) { opened.push(JSON.parse(route.request().postData() || '{}')); return reply({ ok: true }); }
+    if (url.pathname.endsWith('/recents')) return reply({ ok: true, apps: apps.slice(0, 12).map(a => ({ id: a.id, title: a.title })) });
+    return reply({ ok: true, build: 'one' });
+  });
+  const x = sel => page.evaluate(sel => {
+    const m = /translateX\((-?[\d.]+)px\)/.exec(document.querySelector(sel).style.transform || '');
+    return m ? -parseFloat(m[1]) : 0;
+  }, sel);
+  const apps0 = '.row[data-key="app"] .track';
+  try {
+    await page.goto(base + '/assets/home.html');
+    await page.waitForSelector('.row[data-key="app"] .tile');
+    const rowY = await page.evaluate(() => { const r = document.querySelector('.row[data-key="app"] .wrap').getBoundingClientRect(); return r.top + r.height / 2; });
+    await page.mouse.move(900, rowY);
+    await page.waitForTimeout(300);
+    if (await x(apps0) !== 0) problems.push('Home scrolling: hovering a tile moved its row');
+    await page.mouse.move(1880, rowY, { steps: 3 });
+    await page.waitForTimeout(600);
+    const glided = await x(apps0);
+    if (glided < 200) problems.push('Home scrolling: resting at the screen\'s side did not glide the row (' + glided + ' px)');
+    // Held still over a tile near the end while the row glides under it, a
+    // click, with no move before it, opens the tile under the pointer.
+    const still = [1760, rowY];
+    await page.mouse.move(still[0], still[1]);
+    await page.waitForTimeout(500);
+    const under = await page.evaluate(([px, py]) => { let t = document.elementFromPoint(px, py); while (t && !/\btile\b/.test(t.className)) t = t.parentNode; return t && t.querySelector('.nm').textContent; }, still);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+    const last = opened[opened.length - 1];
+    if (!last || 'App ' + last.id.slice(3) !== under) problems.push('Home scrolling: a click opened ' + (last && last.id) + ', not the tile under the pointer, ' + under);
+    await page.mouse.move(900, rowY);
+    await page.waitForTimeout(250);
+    const stopped = await x(apps0);
+    await page.waitForTimeout(300);
+    if (await x(apps0) !== stopped) problems.push('Home scrolling: the glide went on after the pointer left the end');
+    await page.mouse.wheel(0, 100);
+    await page.waitForTimeout(500);
+    if (Math.round(await x(apps0) - stopped) !== 176) problems.push('Home scrolling: a wheel notch did not move the row one tile');
+    // Wheel steps move tiles under a still pointer: a click then opens the
+    // tile now under it, and moving down a row leaves this row where it is.
+    await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(600);
+    const wheeled = await x(apps0);
+    const underWheel = await page.evaluate(([px, py]) => { let t = document.elementFromPoint(px, py); while (t && !/\btile\b/.test(t.className)) t = t.parentNode; return t && t.querySelector('.nm').textContent; }, [900, rowY]);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+    const afterWheel = opened[opened.length - 1];
+    if (!afterWheel || 'App ' + afterWheel.id.slice(3) !== underWheel) problems.push('Home scrolling: after the wheel a click opened ' + (afterWheel && afterWheel.id) + ', not ' + underWheel);
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(400);
+    if (Math.abs(await x(apps0) - wheeled) > 1) problems.push('Home scrolling: moving down a row pulled the wheeled row back');
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(300);
+    const before = await x(apps0);
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(400);
+    if (Math.abs(await x(apps0) - before) > 1) problems.push('Home scrolling: moving down a row pulled the scrolled row above back');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(500);
+    if (Math.abs(await x(apps0) - before) > 200) problems.push('Home scrolling: the keys pulled a scrolled row back');
+    if (!(await page.evaluate(() => { const f = document.querySelector('.row .tile.focus'), w = f.parentNode.parentNode.getBoundingClientRect(), r = f.getBoundingClientRect(); return r.right > w.left && r.left < w.right; })))
+      problems.push('Home scrolling: the keys focused a tile out of view');
+    // Recent apps: glide its cards, close it, and the rows still glide.
+    await page.keyboard.press('Backspace');
+    await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 461, bubbles: true })));
+    await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keyup', { keyCode: 461, bubbles: true })));
+    await page.waitForSelector('#recents .tile.rc');
+    await page.waitForTimeout(400);
+    const cards = await page.evaluate(() => { const r = document.querySelector('#recents .wrap').getBoundingClientRect(); return { y: r.top + r.height / 2, x: r.right - 60 }; });
+    // Over a card in the panel's end zone, the cards glide; a click there
+    // opens that app and the panel closes while the cards are still moving.
+    await page.mouse.move(cards.x, cards.y, { steps: 3 });
+    await page.waitForTimeout(300);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+    const rowsAt = await x(apps0);
+    await page.mouse.move(1870, rowY, { steps: 3 });
+    await page.waitForTimeout(500);
+    if (await x(apps0) <= rowsAt) problems.push('Home scrolling: after Recent apps closed mid-glide, the rows no longer glide');
   } finally { await page.close(); }
 }
 
@@ -770,9 +899,10 @@ async function visitHomeRecents(browser, base, problems) {
   await visitHomeReadiness(browser, base, problems);
   await visitHomeAvailability(browser, base, problems);
   await visitHomeRecents(browser, base, problems);
+  await visitHomeScrolling(browser, base, problems);
   await browser.close();
   for (const p of problems) console.log(p);
   console.log((web.length + tv.length) + ' tabs opened (' + web.length + ' web, ' + tv.length + ' TV app), ' +
-              'Home arranging, picture, colours, update, editing, order, uploads, readiness, availability and recents checked, ' + problems.length + ' problem' + (problems.length === 1 ? '' : 's'));
+              'Home arranging, picture, colours, update, editing, order, uploads, readiness, availability, recents and scrolling checked, ' + problems.length + ' problem' + (problems.length === 1 ? '' : 's'));
   process.exit(problems.length ? 1 : 0);
 })().catch(e => { console.error(e.message); process.exit(1); });

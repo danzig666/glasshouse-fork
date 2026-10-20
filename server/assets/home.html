@@ -83,8 +83,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
 .row h2 span{color:#6b665e;margin-left:14px}
 .wrap{position:relative;overflow:hidden;margin:0 90px;padding:6px 22px}
 /* Moved by script, a frame at a time (scrollTrack). Relative, so a tile's
-   offsetLeft is always from the track, also before it has been moved. */
-.track{position:relative;display:-webkit-flex;display:flex;white-space:nowrap}
+   offsetLeft is always from the track, also before it has been moved; its own
+   layer, so a move is not a repaint of every tile in it. */
+.track{position:relative;display:-webkit-flex;display:flex;white-space:nowrap;will-change:transform}
 /* While the pointer is over a row with more to one side, a soft arrow shows
    there: resting the pointer on that end glides the row. */
 .wrap .edge{position:absolute;top:0;bottom:0;width:96px;opacity:0;pointer-events:none;z-index:1;
@@ -413,10 +414,14 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       $('rows').innerHTML = html;
       renderedRows = html;
     }
-    // While the pointer is in use the rows stay where it put them; with the
-    // keys, each keeps its focused tile in view.
-    applyFocus(true, pointing);
-    if (changed && pointing) placeRows();
+    // Every row stays where it was; with the keys, the row in focus keeps
+    // its focused tile in view, as when a tile is moved while arranging.
+    applyFocus(true, true);
+    placeRows();
+    if (!pointing) {
+      var active = document.querySelector('.row.active');
+      if (active) scrollTrack(active, active.querySelector('.tile.focus'), true);
+    }
   }
   var renderedRows = '';
 
@@ -464,7 +469,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
         tiles[ci].className = tiles[ci].className.replace(/ (focus|held)\b/g, '') + (on ? ' focus' : '') + (on && state.held ? ' held' : '');
       }
       rowEl.querySelector('.sort').className = 'sort' + (active && c === -1 ? ' focus' : '');
-      if (!noScroll) scrollTrack(rowEl, tiles[c], instant);
+      // Only the row in focus is moved: one the pointer or the wheel moved
+      // stays where it was left.
+      if (!noScroll && active) scrollTrack(rowEl, tiles[c], instant);
     }
     for (var b = 0; b < BAR.length; b++) $(BAR[b]).className = 'btn' + (state.bar === b ? ' focus' : '');
     if (state.bar < 0) {
@@ -560,14 +567,15 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     if (instant) { tr.x = tr.target; paint(key); } else kick();
   }
 
-  // The tiles of a row fully in view where it is headed, as [first, last].
+  // The tiles of a row in view where it is headed, as [first, last]: one
+  // with any real part showing counts, so the sliver at an end is not passed.
   function inView(key) {
     var m = measure(key), tr = trackOf(key);
     if (!m) return null;
     var tiles = m.track.querySelectorAll('.tile'), first = -1, last = -1;
     for (var i = 0; i < tiles.length; i++) {
       var left = tiles[i].offsetLeft - tr.target, right = left + tiles[i].offsetWidth;
-      if (left >= -1 && right <= m.view + 1) { if (first === -1) first = i; last = i; }
+      if (right > 8 && left < m.view - 8) { if (first === -1) first = i; last = i; }
     }
     return first === -1 ? null : [first, last];
   }
@@ -580,14 +588,29 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   }
 
   function tick(now) {
+    var busy = false;
+    // An error in a frame must not leave the loop marked as running, or no
+    // row would move again until Home was reloaded.
+    try { busy = frame(now); } finally {
+      if (busy) nextFrame(tick);
+      else animating = false;
+    }
+    if (!busy) settle();
+  }
+
+  function frame(now) {
     var dt = lastFrame ? Math.min(64, now - lastFrame) : 16;
     lastFrame = now;
     var busy = false;
+    if (glide && state.held) glide = null;
     if (glide) {
       var g = trackOf(glide.key);
       var to = Math.max(0, Math.min(g.max, g.target + glide.dir * GLIDE_MAX * glide.depth * glide.depth * dt / 1000));
       if (to !== g.target) {
-        g.target = g.x = to;
+        // Gliding moves the row itself; a wheel step still being eased to
+        // carries on easing.
+        if (Math.abs(g.target - g.x) < 1) g.x = to;
+        g.target = to;
         paint(glide.key);
         busy = true;
         // The tile under a still pointer changes as the row glides past it.
@@ -606,8 +629,22 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       else { tr.x += d * (1 - Math.exp(-dt / EASE_MS)); busy = true; }
       paint(key);
     }
-    if (busy) nextFrame(tick);
-    else animating = false;
+    return busy;
+  }
+
+  /*
+   * Once a row has stopped, the focus is on a tile in view: the one under the
+   * pointer, so OK or a click opens what it points at, or, with the pointer
+   * hidden after the wheel, the nearest tile still in view, so the keys and
+   * the next render do not pull the row back.
+   */
+  function settle() {
+    if (pointing) return hoverTile(document.elementFromPoint(pointerX, pointerY));
+    if (!data || !layout || recents.open || state.bar >= 0 || state.held) return;
+    var kind = rowKey(), span = inView(kind), c = colOf(kind);
+    if (!span || c < 0 || (c >= span[0] && c <= span[1])) return;
+    state.col[kind] = c < span[0] ? span[0] : span[1];
+    applyFocus(false, true);
   }
 
   // The arrows on the row under the pointer, where there is more to see.
@@ -698,8 +735,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       title = lastOn.title;
       via = t('home.now.app', 'App on this TV');
     }
-    // Hidden, not removed, when switched off, so the plate keeps its place.
-    $('source').className = title && !(layout && layout.showSource === false) ? '' : 'none';
+    // Hidden, not removed, when switched off, so the plate keeps its place;
+    // and not shown before the layout says whether it is on.
+    $('source').className = title && layout && layout.showSource !== false ? '' : 'none';
     $('srcKind').textContent = kind || ' ';
     $('srcTitle').textContent = title || ' ';
     $('srcVia').textContent = via || ' ';
@@ -735,6 +773,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     }
     getJson('/api/home/picture?kind=' + kind + which, function (r) {
       if (revision !== pictureRevision || !r || !r.ok) return;
+      // A mode the TV did not give this time keeps the one it gave before.
+      if (!r.mode && picture && picture.mode) { r.mode = picture.mode; r.light = picture.light; }
       picture = r;
       renderPicture();
     });
@@ -761,6 +801,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     } else if (lastOn.kind === 'app') {
       sig.push(t('home.plate.noVideo', 'No video noted yet'));
     }
+    // With no signal to go by, the mode is the one the source gets in SDR.
+    if (p.assumed && p.mode && lastOn.kind !== 'channel') sig.push(t('home.plate.sdrMode', 'SDR mode'));
     $('plSig').innerHTML = sig.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('');
     $('plMode').textContent = p.mode ? p.mode.display : '';
     $('plStrip').innerHTML = p.mode && typeof p.light === 'number'
@@ -846,6 +888,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     recents.revision++;
     recents.loading = false;
     recents.open = false;
+    if (glide && glide.key === 'recents') glide = null;
+    if (hoverKey === 'recents') hoverKey = null;
     stageClass();
   }
 
@@ -916,7 +960,10 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     }
     if (!app) return;
     if (k === KEY.left || k === KEY.right) {
-      recents.col = Math.max(0, Math.min(recents.apps.length - 1, recents.col + (k === KEY.left ? -1 : 1)));
+      // Cards the wheel or the pointer moved are taken up from those in view.
+      var span = inView('recents');
+      if (span && (recents.col < span[0] || recents.col > span[1])) recents.col = k === KEY.right ? span[0] : span[1];
+      else recents.col = Math.max(0, Math.min(recents.apps.length - 1, recents.col + (k === KEY.left ? -1 : 1)));
       recents.onX = false;
     } else if (k === KEY.up) {
       if (recents.onX) recents.onX = false; else recents.onAll = true;
@@ -1186,6 +1233,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     if (!tile || state.held) return;
     var rowEl = tile.parentNode;
     while (rowEl && !/\brow\b/.test(rowEl.className)) rowEl = rowEl.parentNode;
+    if (!rowEl) return;
     var r = +rowEl.getAttribute('data-row'), c = +tile.getAttribute('data-c'), kind = layout.rows[r];
     if (state.row !== r || colOf(kind) !== c || state.bar >= 0) {
       state.row = r; state.col[kind] = c; state.bar = -1;
@@ -1204,6 +1252,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       return toggleSort(rowKey());
     }
     if (!tileAt(e.target)) return;
+    // The tile clicked, which a glide may have moved under the pointer since
+    // the focus last followed it.
+    hoverTile(e.target);
     if (state.arranging) pickUp();
     else activate();
   }
@@ -1401,6 +1452,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     readLaunchParams();
     updateWall();
     state.row = 0; state.col = {}; state.bar = -1;
+    stopPointing();
+    tracks = {};
     if (state.arranging) setArranging(false);
     beat();
     load();
