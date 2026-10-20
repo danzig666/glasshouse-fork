@@ -142,7 +142,8 @@ console.log('Running test-screensavers.js ...');
   assert.ok(ids.indexOf('harmonograph') !== -1, 'catalog must include harmonograph');
   assert.ok(ids.indexOf('tesseract') !== -1, 'catalog must include tesseract');
   assert.ok(ids.indexOf('sacred') !== -1, 'catalog must include sacred');
-  assert.strictEqual(ids.length, 9, 'catalog must have exactly 9 entries');
+  assert.ok(ids.indexOf('geomesh') !== -1, 'catalog must include geomesh');
+  assert.strictEqual(ids.length, 10, 'catalog must have exactly 10 entries');
 
   // Each non-stock entry must have a qml path
   for (var i = 0; i < ids.length; i++) {

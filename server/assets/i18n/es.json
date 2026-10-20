@@ -4846,6 +4846,14 @@
   "text": "Estallidos de color sobre negro, cada pocos segundos.",
   "from": "Bursts of colour on black, a few seconds apart."
  },
+ "srv.saver.geomesh": {
+  "text": "Malla geomagnética",
+  "from": "Geomagnetic mesh"
+ },
+ "srv.saver.geomesh.desc": {
+  "text": "La malla de efectos geomagnéticos alrededor de un observador y su dirección sumada, según el libro de Attila Kőszeghy The Geomagnetic Poles Will Not Swap Places.",
+  "from": "The mesh of geomagnetic effects round an observer and their summed direction, after Attila Kőszeghy's The Geomagnetic Poles Will Not Swap Places."
+ },
  "srv.saver.harmonograph": {
   "text": "Harmonógrafo",
   "from": "Harmonograph"

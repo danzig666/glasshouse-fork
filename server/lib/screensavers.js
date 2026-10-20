@@ -81,6 +81,11 @@ var SCREENSAVERS = {
     description: msg('srv.saver.sacred.desc', 'An icosahedron and its dual dodecahedron turning together, in fine lines of light.'),
     qml: 'screensavers/sacred.qml'
   },
+  geomesh: {
+    label: msg('srv.saver.geomesh', 'Geomagnetic mesh'),
+    description: msg('srv.saver.geomesh.desc', 'The mesh of geomagnetic effects round an observer and their summed direction, after Attila Kőszeghy\'s The Geomagnetic Poles Will Not Swap Places.'),
+    qml: 'screensavers/geomesh.qml'
+  },
   vitals: {
     label: msg('srv.saver.vitals', 'Panel vitals'),
     description: msg('srv.saver.vitals.desc', 'The TV\'s own readings - panel hours, pixel refresher countdown, temperature.'),
