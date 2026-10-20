@@ -1111,6 +1111,9 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       saveLayout({});
     }
     render();
+    // render() leaves a moving row alone; with the hidden tiles gone, the
+    // focused one may have moved out of view.
+    if (!on && animating) applyFocus();
   }
 
   /*
