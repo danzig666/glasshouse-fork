@@ -36,15 +36,17 @@ new Function('exports', src + '\nexports.frame = frame; exports.effect = effect;
   assert.strictEqual(f.strokes.length, G.STROKE_COUNT);
   assert.strictEqual(f.dots.length, G.DOT_COUNT);
   assert.strictEqual(f.rampart.length, G.RAMPART_SEGMENTS);
-  // The triad's shortest arm is the unit, drawn the brightest; each other
-  // arm weighs (shortest / its length) squared.
-  var arms = f.strokes.slice(0, 3);
-  var lengths = arms.map(function (s) { return Math.sqrt(s.x2 * s.x2 + s.y2 * s.y2); });
+  // The triad's shortest arm on the plane is the unit, drawn the brightest;
+  // each other arm weighs (shortest / its length) squared.
+  var lengths = f.triad.map(function (c) { return Math.sqrt(c.x * c.x + c.y * c.y); });
   var shortest = Math.min.apply(Math, lengths);
-  arms.forEach(function (s, i) {
+  f.triad.forEach(function (c, i) {
     var weight = Math.pow(shortest / lengths[i], 2);
-    assert.ok(Math.abs(s.alpha - (0.35 + 0.5 * weight)) < 1e-9);
+    assert.ok(Math.abs(c.weight - weight) < 1e-9);
+    assert.ok(Math.abs(f.strokes[i].alpha - (0.35 + 0.5 * weight)) < 1e-9);
   });
+  assert.ok(f.triad.some(function (c) { return c.weight === 1; }));
+  assert.strictEqual(f.walls.length, G.RAMPART_SEGMENTS);
   console.log('  ✓ 33 mesh lines of 7 stops, the triad weighed against its shortest arm, the summed vector, 72 rampart segments');
 })();
 
@@ -65,11 +67,11 @@ new Function('exports', src + '\nexports.frame = frame; exports.effect = effect;
   console.log('  ✓ relaxed the sum points north, squeezed it swings south (' + Math.round(100 * south / n) + '% of the time), and north on the ring stays put');
 })();
 
-// Each triad arm's direction crosses the rampart in a gate.
+// Each triad arm's direction on the plane crosses the rampart in a gate.
 (function () {
   var f = G.frame(50);
-  f.strokes.slice(0, 3).forEach(function (s) {
-    var angle = Math.atan2(s.x2, -s.y2);
+  f.triad.forEach(function (c) {
+    var angle = c.angle;
     var i = Math.floor(((angle + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * G.RAMPART_SEGMENTS);
     assert.strictEqual(f.rampart[i], 0, 'gate at ' + (angle * 180 / Math.PI).toFixed(0) + ' degrees');
   });
@@ -87,15 +89,16 @@ new Function('exports', src + '\nexports.frame = frame; exports.effect = effect;
   console.log('  ✓ the six-hour clock starts again without a jump');
 })();
 
-// The ring, the widest part, with its ticks and the drift, stays on screen.
+// The ring, the widest part, with its ticks and the drift, stays on screen,
+// and the turning plane stays inside the ring.
 (function () {
   var reach = G.RADIUS + 22, x = 0, y = 0;
   for (var t = 0; t < G.CYCLE; t += 10) {
     var f = G.frame(t);
     x = Math.max(x, Math.abs(f.driftX) + reach);
     y = Math.max(y, Math.abs(f.driftY) + reach);
-    f.lines.forEach(function (l) {
-      [l.x1, l.x2, l.y1, l.y2].forEach(function (v) { assert.ok(Math.abs(v) <= G.RADIUS + 1e-6); });
+    f.lines.concat(f.walls).forEach(function (l) {
+      assert.ok(Math.sqrt(l.x1 * l.x1 + l.y1 * l.y1) <= G.RADIUS && Math.sqrt(l.x2 * l.x2 + l.y2 * l.y2) <= G.RADIUS);
     });
   }
   assert.ok(x < 960 && y < 540, 'reaches ' + x + ', ' + y);

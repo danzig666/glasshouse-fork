@@ -6,14 +6,15 @@
  * rampart of Goseck with its three gates; the degree ring of the
  * transmission circle diagram. As the mesh is squeezed north-south the
  * summed vector swings south and back, while north on the ring stays put.
+ * The ground plane with all of it on leans and swings in 3D inside the flat
+ * ring.
  *
  * geomesh.js has the figure and every colour and width, so this file only
  * lays it out. A mesh line is a Rectangle laid along it whose vertical
  * gradient carries the fade, over a wider faint one for its glow; the rest
  * are plain Rectangles. All of it is drawn by the scene graph with no
  * shader, since on a C3 (webOS 10.2.2) no ShaderEffect compiles in the screen
- * saver runner. The ring and the rampart's segments are placed once; only
- * their brightness and the figure's position change.
+ * saver runner. The ring is placed once.
  *
  * Kind to the panel: the background is black, the mesh and the vectors move
  * all the time, and the whole figure drifts gently about the middle.
@@ -84,22 +85,25 @@ WebOSWindow {
             }
         }
 
-        // The rampart, a segment each 5 degrees, the gates open.
+        // The rampart, a segment each 5 degrees of the plane, the gates open.
         Repeater {
             model: Geomesh.RAMPART_SEGMENTS
             Item {
-                property real mid: (index + 0.5) / Geomesh.RAMPART_SEGMENTS * 2 * Math.PI
-                x: Math.sin(mid) * Geomesh.RAMPART
-                y: -Math.cos(mid) * Geomesh.RAMPART
-                rotation: mid * 180 / Math.PI
+                property var wall: win.geo.walls[index]
+                property real dx: wall.x2 - wall.x1
+                property real dy: wall.y2 - wall.y1
+                x: wall.x1
+                y: wall.y1
+                rotation: Math.atan2(dy, dx) * 180 / Math.PI
+                transformOrigin: Item.TopLeft
                 Rectangle {
-                    x: -width / 2
-                    y: -height / 2
-                    width: 2 * Math.PI * Geomesh.RAMPART / Geomesh.RAMPART_SEGMENTS * 0.86
+                    x: -1.5
+                    y: -1.5
+                    width: Math.sqrt(parent.dx * parent.dx + parent.dy * parent.dy) + 3
                     height: 3
                     radius: 1.5
                     antialiasing: true
-                    color: win.tint(Geomesh.RAMPART_RGB, 0.40 * win.geo.rampart[index])
+                    color: win.tint(parent.wall.rgb, parent.wall.alpha)
                 }
             }
         }
