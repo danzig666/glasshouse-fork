@@ -49,10 +49,10 @@ new Function('exports', src + '\nexports.frame = frame; exports.effect = effect;
 })();
 
 // Relaxed, the summed vector points into the northern half; squeezed hardest
-// (every 720 s, half a period in), into the southern. North on the ring is
+// (every 144 s, half a period in), into the southern. North on the ring is
 // the brightest tick, at the top, at every moment.
 (function () {
-  var relaxed = G.frame(0), squeezed = G.frame(360);
+  var relaxed = G.frame(0), squeezed = G.frame(72);
   assert.ok(relaxed.squeeze > 0.99 && squeezed.squeeze < 0.7);
   assert.ok(Math.abs(relaxed.resultantAngle) < Math.PI / 2, 'relaxed: ' + relaxed.resultantAngle);
   assert.ok(Math.abs(squeezed.resultantAngle) > Math.PI / 2, 'squeezed: ' + squeezed.resultantAngle);
@@ -60,14 +60,14 @@ new Function('exports', src + '\nexports.frame = frame; exports.effect = effect;
   assert.ok(Math.abs(north.x1) < 1e-9 && north.y1 < 0);
   G.RING.forEach(function (r, i) { if (i) assert.ok(r.alpha < north.alpha); });
   var south = 0, n = 0;
-  for (var t = 0; t < G.CYCLE; t += 5) { n++; if (Math.abs(G.frame(t).resultantAngle) > Math.PI / 2) south++; }
+  for (var t = 0; t < G.CYCLE; t += 1) { n++; if (Math.abs(G.frame(t).resultantAngle) > Math.PI / 2) south++; }
   assert.ok(south / n > 0.1 && south / n < 0.5, 'south ' + (100 * south / n).toFixed(0) + '% of the time');
   console.log('  ✓ relaxed the sum points north, squeezed it swings south (' + Math.round(100 * south / n) + '% of the time), and north on the ring stays put');
 })();
 
 // Each triad arm's direction crosses the rampart in a gate.
 (function () {
-  var f = G.frame(250);
+  var f = G.frame(50);
   f.strokes.slice(0, 3).forEach(function (s) {
     var angle = Math.atan2(s.x2, -s.y2);
     var i = Math.floor(((angle + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * G.RAMPART_SEGMENTS);

@@ -12,6 +12,9 @@
  * while north on the ring stays where it is: the book's poles that do not
  * swap places.
  *
+ * The mesh moves faster than the other screen savers' figures, a squeeze
+ * every 144 s, so the swing can be seen without waiting for it.
+ *
  * Plain ES5 with no QML in it, so the browser preview runs this same file.
  * Every motion is a function of t, in seconds, on a six-hour clock: each
  * period divides 21600, so nothing jumps when the clock starts again.
@@ -74,12 +77,12 @@ var RING = (function () {
  * the tightest squeeze, the sum swings south. North on the ring stays put.
  */
 function triangle(t) {
-    var lean = (50 + 6 * Math.sin(phase(t, 900))) * Math.PI / 180;
-    var left = 0.50, right = 0.54 + 0.03 * Math.sin(phase(t, 600) + 1.0);
-    var south = 0.60 + 0.03 * Math.sin(phase(t, 1080));
-    var rock = 0.26 * Math.sin(phase(t, 2700));
+    var lean = (50 + 6 * Math.sin(phase(t, 180))) * Math.PI / 180;
+    var left = 0.50, right = 0.54 + 0.03 * Math.sin(phase(t, 120) + 1.0);
+    var south = 0.60 + 0.03 * Math.sin(phase(t, 216));
+    var rock = 0.26 * Math.sin(phase(t, 540));
     // Squeezed north-south by up to 36%.
-    var squeeze = 1 - 0.36 * (0.5 - 0.5 * Math.cos(phase(t, 720)));
+    var squeeze = 1 - 0.36 * (0.5 - 0.5 * Math.cos(phase(t, 144)));
     function place(angle, length) {
         var a = angle + rock;
         return [Math.sin(a) * length * UNIT, -Math.cos(a) * length * squeeze * UNIT];
@@ -199,7 +202,7 @@ function frame(t) {
         rampart: rampart,
         squeeze: T.squeeze,
         resultantAngle: resultant.angle,
-        driftX: 90 * Math.sin(phase(t, 600)),
-        driftY: 45 * Math.sin(phase(t, 450) + 1.0)
+        driftX: 90 * Math.sin(phase(t, 120)),
+        driftY: 45 * Math.sin(phase(t, 90) + 1.0)
     };
 }
