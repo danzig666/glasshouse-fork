@@ -1529,9 +1529,16 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     closeRecents();
     readLaunchParams();
     updateWall();
-    state.row = 0; state.col = {}; state.bar = -1;
+    // Back from an app, Home is as it was left: the same tile in focus and
+    // every row where it was scrolled, brought to rest where it was headed.
+    state.bar = -1;
     stopPointing();
-    tracks = {};
+    landAll();
+    for (var key in tracks) {
+      if (!tracks.hasOwnProperty(key)) continue;
+      tracks[key].x = tracks[key].target;
+      tracks[key].v = 0;
+    }
     if (state.arranging) setArranging(false);
     beat();
     load();
