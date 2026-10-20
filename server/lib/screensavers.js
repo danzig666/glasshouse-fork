@@ -76,6 +76,11 @@ var SCREENSAVERS = {
     description: msg('srv.saver.tesseract.desc', 'A four-dimensional cube turning through the fourth dimension, in fine lines of light.'),
     qml: 'screensavers/tesseract.qml'
   },
+  sacred: {
+    label: msg('srv.saver.sacred', 'Sacred geometry'),
+    description: msg('srv.saver.sacred.desc', 'An icosahedron and its dual dodecahedron turning together, in fine lines of light.'),
+    qml: 'screensavers/sacred.qml'
+  },
   vitals: {
     label: msg('srv.saver.vitals', 'Panel vitals'),
     description: msg('srv.saver.vitals.desc', 'The TV\'s own readings - panel hours, pixel refresher countdown, temperature.'),

@@ -1,6 +1,6 @@
 # Screen savers
 
-The **Screensaver** tab, `/?tab=screensaver`, provides seven alternatives to LG's default:
+The **Screensaver** tab, `/?tab=screensaver`, provides eight alternatives to LG's default:
 
 * Clock
 * Starfield
@@ -8,6 +8,7 @@ The **Screensaver** tab, `/?tab=screensaver`, provides seven alternatives to LG'
 * Bokeh, soft circles of light drifting in and out
 * Harmonograph, pendulum ribbons of light weaving and fading on black
 * Tesseract, a four-dimensional cube turning through the fourth dimension, in fine lines of light that dim and turn violet with depth
+* Sacred geometry, an icosahedron and its dual dodecahedron turning together, the dodecahedron breathing between sitting inside the icosahedron and crossing it as their compound, with the cube in the dodecahedron
 * Panel vitals, showing the TV's own panel hours and refresher countdown
 
 Each mode offers dim and bright variants, and visual elements continuously drift across the screen to prevent OLED burn-in or image retention.

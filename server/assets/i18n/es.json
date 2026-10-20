@@ -4882,6 +4882,14 @@
   "text": "no se pudo preparar el salvapantallas: {error}",
   "from": "could not stage the screen saver: {error}"
  },
+ "srv.saver.sacred": {
+  "text": "Geometría sagrada",
+  "from": "Sacred geometry"
+ },
+ "srv.saver.sacred.desc": {
+  "text": "Un icosaedro y su dodecaedro dual girando juntos, en finas líneas de luz.",
+  "from": "An icosahedron and its dual dodecahedron turning together, in fine lines of light."
+ },
  "srv.saver.starfield": {
   "text": "Campo estelar",
   "from": "Starfield"
