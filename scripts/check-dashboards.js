@@ -310,7 +310,7 @@ async function visitHomeScrolling(browser, base, problems) {
     const last = opened[opened.length - 1];
     if (!last || 'App ' + last.id.slice(3) !== under) problems.push('Home scrolling: a click opened ' + (last && last.id) + ', not the tile under the pointer, ' + under);
     await page.mouse.move(900, rowY);
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(700);
     const stopped = await x(apps0);
     await page.waitForTimeout(300);
     if (await x(apps0) !== stopped) problems.push('Home scrolling: the glide went on after the pointer left the end');
@@ -361,6 +361,110 @@ async function visitHomeScrolling(browser, base, problems) {
     await page.mouse.move(1870, rowY, { steps: 3 });
     await page.waitForTimeout(500);
     if (await x(apps0) <= rowsAt) problems.push('Home scrolling: after Recent apps closed mid-glide, the rows no longer glide');
+  } finally { await page.close(); }
+}
+
+/*
+ * A row's place frame by frame, read in a frame callback: a flick to the
+ * screen's side gathers speed over several frames, the row brakes into its
+ * end, and moving the pointer away lets it slow to a stop.
+ */
+async function visitHomeMotion(browser, base, problems) {
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  page.on('pageerror', e => problems.push('Home motion: ' + e.message));
+  const apps = Array.from({ length: 30 }, (_, i) => ({ id: 'app' + i, title: 'App ' + i }));
+  const layout = { rows: ['app', 'dev', 'ch'], order: { app: [], dev: [], ch: [] },
+    hidden: { app: [], dev: [], ch: [] }, channels: [], hintSeen: true };
+  await page.route('**/api/home/**', route => {
+    const url = new URL(route.request().url());
+    const reply = body => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    if (url.pathname.endsWith('/catalogue')) {
+      return reply({ ok: true, layout, apps, devices: [], channels: [],
+        sources: { channels: 0 }, order: { app: apps.map(a => a.id), dev: [], ch: [] } });
+    }
+    if (url.pathname.endsWith('/now')) return reply({ kind: null });
+    return reply({ ok: true, build: 'one' });
+  });
+  const mark = () => page.evaluate(() => window.xs.length);
+  const steps = from => page.evaluate(from => {
+    const d = [];
+    for (let i = from + 1; i < window.xs.length; i++) if (window.xs[i] !== window.xs[i - 1]) d.push(window.xs[i] - window.xs[i - 1]);
+    return d;
+  }, from);
+  const show = d => d.map(v => v.toFixed(1)).join(', ');
+  try {
+    await page.goto(base + '/assets/home.html');
+    await page.waitForSelector('.row[data-key="app"] .tile');
+    const rowY = await page.evaluate(() => { const r = document.querySelector('.row[data-key="app"] .wrap').getBoundingClientRect(); return r.top + r.height / 2; });
+    await page.mouse.move(900, rowY);
+    await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      window.xs = [];
+      const track = document.querySelector('.row[data-key="app"] .track');
+      (function read() {
+        const m = /translateX\((-?[\d.]+)px\)/.exec(track.style.transform || '');
+        window.xs.push(m ? -parseFloat(m[1]) : 0);
+        requestAnimationFrame(read);
+      })();
+    });
+    let at = await mark();
+    await page.mouse.move(1880, rowY);
+    await page.waitForTimeout(400);
+    let d = await steps(at);
+    if (d.length < 3) problems.push('Home motion: a flick to the screen\'s side did not glide the row');
+    else if (d[0] > 10 || d[1] > 14) problems.push('Home motion: a glide started at full speed (' + show(d.slice(0, 3)) + ' px a frame)');
+    await page.waitForFunction(() => { const xs = window.xs, n = xs.length; return n > 12 && xs[n - 1] > 1000 && xs[n - 1] === xs[n - 12]; }, null, { timeout: 10000 });
+    d = await steps(at);
+    const end = await page.evaluate(() => { const w = document.querySelector('.row[data-key="app"] .wrap'); return w.querySelector('.track').scrollWidth - (w.clientWidth - 44); });
+    const rest = await page.evaluate(() => window.xs[window.xs.length - 1]);
+    if (Math.abs(rest - end) > 1) problems.push('Home motion: the glide stopped at ' + rest + ' px, not at the row\'s end, ' + end);
+    if (Math.max.apply(null, d) < 18) problems.push('Home motion: the glide never reached its speed (' + Math.max.apply(null, d).toFixed(1) + ' px a frame)');
+    if (Math.max.apply(null, d.slice(-3)) > 12) problems.push('Home motion: the row ran into its end (' + show(d.slice(-3)) + ' px a frame)');
+    await page.mouse.move(20, rowY);
+    await page.waitForTimeout(700);
+    at = await mark();
+    await page.mouse.move(900, rowY);
+    await page.waitForTimeout(800);
+    d = await steps(at);
+    if (d.length < 6 || Math.abs(d[d.length - 1]) > 3) problems.push('Home motion: the glide stopped dead when the pointer left the end (' + show(d) + ')');
+  } finally { await page.close(); }
+}
+
+/*
+ * A channel's programme moves on through the minute's refresh with its tile
+ * left in place: the rows are not rebuilt for the progress bar.
+ */
+async function visitHomeGuide(browser, base, problems) {
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  page.on('pageerror', e => problems.push('Home guide: ' + e.message));
+  const start = Date.parse('2026-10-20T20:00:00Z');
+  const layout = { rows: ['app', 'dev', 'ch'], order: { app: [], dev: [], ch: [] },
+    hidden: { app: [], dev: [], ch: [] }, channels: ['ch1'], hintSeen: true };
+  await page.route('**/api/home/**', route => {
+    const url = new URL(route.request().url());
+    const reply = body => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    if (url.pathname.endsWith('/catalogue')) {
+      return reply({ ok: true, layout, apps: [{ id: 'app0', title: 'App 0' }], devices: [],
+        channels: [{ id: 'ch1', number: '1', name: 'One' }], sources: { channels: 1 },
+        order: { app: ['app0'], dev: [], ch: ['ch1'] } });
+    }
+    if (url.pathname.endsWith('/guide')) {
+      return reply({ ok: true, guide: { ch1: [{ title: 'News', start, end: start + 3600000 },
+        { title: 'Film', start: start + 3600000, end: start + 7200000 }] } });
+    }
+    if (url.pathname.endsWith('/now')) return reply({ kind: null });
+    return reply({ ok: true, build: 'one' });
+  });
+  try {
+    await page.clock.install({ time: start + 600000 });
+    await page.goto(base + '/assets/home.html');
+    await page.waitForSelector('.ch .bar i');
+    const first = await page.evaluate(() => { window.bar = document.querySelector('.ch .bar i'); return window.bar.style.width; });
+    if (first !== '16.7%') problems.push('Home guide: ten minutes into an hour showed as ' + first);
+    await page.clock.fastForward(60000);
+    await page.waitForFunction(w => document.querySelector('.ch .bar i').style.width !== w, first, { timeout: 5000 });
+    if (!(await page.evaluate(() => document.querySelector('.ch .bar i') === window.bar)))
+      problems.push('Home guide: the minute\'s refresh rebuilt the rows to move a programme\'s progress on');
   } finally { await page.close(); }
 }
 
@@ -900,9 +1004,11 @@ async function visitHomeRecents(browser, base, problems) {
   await visitHomeAvailability(browser, base, problems);
   await visitHomeRecents(browser, base, problems);
   await visitHomeScrolling(browser, base, problems);
+  await visitHomeMotion(browser, base, problems);
+  await visitHomeGuide(browser, base, problems);
   await browser.close();
   for (const p of problems) console.log(p);
   console.log((web.length + tv.length) + ' tabs opened (' + web.length + ' web, ' + tv.length + ' TV app), ' +
-              'Home arranging, picture, colours, update, editing, order, uploads, readiness, availability, recents and scrolling checked, ' + problems.length + ' problem' + (problems.length === 1 ? '' : 's'));
+              'Home arranging, picture, colours, update, editing, order, uploads, readiness, availability, recents, scrolling, motion and guide checked, ' + problems.length + ' problem' + (problems.length === 1 ? '' : 's'));
   process.exit(problems.length ? 1 : 0);
 })().catch(e => { console.error(e.message); process.exit(1); });

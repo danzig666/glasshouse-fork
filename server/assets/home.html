@@ -394,6 +394,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   function render() {
     stageClass();
     var html = '';
+    barWidths = [];
     if (!shown(state.row)) state.row = nextShown(0, 1);
     layout.rows.forEach(function (kind, ri) {
       var list = items(kind);
@@ -414,16 +415,30 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       $('rows').innerHTML = html;
       renderedRows = html;
     }
+    // A programme's progress is set in place, so the minute's refresh does
+    // not rebuild the rows.
+    var bars = $('rows').querySelectorAll('.bar i');
+    for (var b = 0; b < bars.length; b++) if (bars[b].style.width !== barWidths[b]) bars[b].style.width = barWidths[b];
     // Every row stays where it was; with the keys, the row in focus keeps
-    // its focused tile in view, as when a tile is moved while arranging.
+    // its focused tile in view, as when a tile is moved while arranging. A
+    // row still moving is left to finish, and settle() then keeps its focus
+    // in view.
     applyFocus(true, true);
     placeRows();
-    if (!pointing) {
+    if (!pointing && (!animating || state.arranging)) {
       var active = document.querySelector('.row.active');
-      if (active) scrollTrack(active, active.querySelector('.tile.focus'), true);
+      if (active) scrollTrack(active, active.querySelector('.tile.focus'), !animating);
     }
   }
-  var renderedRows = '';
+  var renderedRows = '', barWidths = [];
+
+  // The minute's refresh waits for a moving row to stop (tick), so the rows
+  // are not rebuilt under it. Its changes leave every tile where it was.
+  var renderWaiting = false;
+  function renderWhenStill() {
+    if (animating) renderWaiting = true;
+    else render();
+  }
 
   var hiddenLabel = '<span class="hid">' + esc(t('home.hidden', 'Hidden')) + '</span>';
 
@@ -450,7 +465,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       var body = '<div class="num">' + esc(c.number) + '</div><div class="nm">' + esc(c.name) + '</div>';
       if (shows.length) {
         var on = shows[0], pct = Math.max(0, Math.min(100, (Date.now() - on.start) / (on.end - on.start) * 100));
-        body += '<div class="prog">' + esc(on.title) + '</div><div class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></div>';
+        body += '<div class="prog">' + esc(on.title) + '</div><div class="bar"><i></i></div>';
+        barWidths.push(Math.round(pct * 10) / 10 + '%');
         if (shows[1]) body += '<div class="next">' + esc(hm(new Date(shows[1].start)) + ' ' + shows[1].title) + '</div>';
       }
       return '<div class="' + cls + '" data-c="' + i + '">' + body + hiddenLabel + '</div>';
@@ -504,6 +520,13 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
    * row's end took the focus, stepped the row a tile and left another sliver
    * under the pointer, so the row ran on in jerks.
    *
+   * No row changes speed in a single frame. A glide gathers speed, slows to a
+   * stop when the pointer leaves the end, and brakes into the row's last
+   * tile. The keys and the wheel set where a row is headed, and a critically
+   * damped spring takes it there from whatever speed it has, so a spun wheel
+   * or a held arrow moves it steadily, where an ease restarted at each step
+   * surged at every notch.
+   *
    * Each row's place is kept here, by row, so a rebuilt row keeps it.
    */
   var tracks = {};
@@ -512,14 +535,19 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   var animating = false, lastFrame = 0, lastHover = 0;
   var EDGE = 150;          // stage px in from a row's end where it glides
   var GLIDE_MAX = 1400;    // stage px a second, pointing at the very end
-  var EASE_MS = 70;        // how quickly a row eases to where it is sent
+  var GLIDE_IN = 110;      // ms for a glide to gather most of its speed
+  var GLIDE_OUT = 65;      // ms to lose it: from full speed, about 90 px more
+  var BRAKE = 6000;        // stage px/s², into a row's end: the last 163 px from full speed
+  var SPRING = 20;         // per second: a key or wheel step is 90% there in about 195 ms
   var stageScale = 1;
   var pointing = false;    // the pointer is showing and was used last
   var pointerX = 0, pointerY = 0;
   var hoverKey = null;     // the row the pointer is over
   var glide = null;        // { key, dir, depth } while it rests on an end
 
-  function trackOf(key) { return tracks[key] || (tracks[key] = { x: 0, target: 0, max: 0 }); }
+  // x is where a row is drawn and target where it is headed; v is the
+  // spring's speed, and gv the glide's, which moves both, in px a second.
+  function trackOf(key) { return tracks[key] || (tracks[key] = { x: 0, target: 0, max: 0, v: 0, gv: 0 }); }
   function keyOf(rowEl) { return rowEl.id === 'recents' ? 'recents' : rowEl.getAttribute('data-key'); }
   function rowElOf(key) { return key === 'recents' ? $('recents') : document.querySelector('.row[data-key="' + key + '"]'); }
 
@@ -534,22 +562,41 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
   }
 
   function paint(key) {
-    var rowEl = rowElOf(key), track = rowEl && rowEl.querySelector('.track');
+    var rowEl = rowElOf(key), track = rowEl && rowEl.querySelector('.track'), tr = trackOf(key);
     if (!track) return;
-    var x = -Math.round(trackOf(key).x * 10) / 10;
+    // Sent back the other way at speed, the spring can carry a row a little
+    // past where it is headed; never past its ends.
+    var x = -Math.round(Math.max(0, Math.min(tr.max, tr.x)) * 10) / 10;
     track.style.webkitTransform = track.style.transform = 'translateX(' + x + 'px)';
   }
 
-  // Rows just rebuilt put back where they were, within their new length.
+  // Rows just rebuilt put back where they were, within their new length; one
+  // on its way somewhere carries on.
   function placeRows() {
     var rows = document.querySelectorAll('.row');
     for (var i = 0; i < rows.length; i++) {
       var key = keyOf(rows[i]), tr = trackOf(key);
       if (!measure(key)) continue;
-      tr.target = tr.x = Math.max(0, Math.min(tr.target, tr.max));
+      tr.target = Math.max(0, Math.min(tr.target, tr.max));
+      tr.x = Math.max(0, Math.min(tr.x, tr.max));
       paint(key);
     }
     edges();
+  }
+
+  /*
+   * The keys or the wheel taking a row over from its glide: where the glide
+   * would have come to rest is where the row is headed, and the spring takes
+   * it there from the speed it has.
+   */
+  function land(tr) {
+    if (!tr.gv) return;
+    tr.target = Math.max(0, Math.min(tr.max, Math.round(tr.target + tr.gv * GLIDE_OUT / 1000)));
+    tr.v += tr.gv;
+    tr.gv = 0;
+  }
+  function landAll() {
+    for (var key in tracks) if (tracks.hasOwnProperty(key)) land(tracks[key]);
   }
 
   // Keeps a tile in view by moving the track, not the page.
@@ -557,6 +604,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     if (!rowEl) return;
     var key = keyOf(rowEl), tr = trackOf(key), m = measure(key);
     if (!m) return;
+    land(tr);
     if (!tile) tile = m.track.querySelector('.tile');
     var x = tr.target;
     if (tile) {
@@ -564,7 +612,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       if (tile.offsetLeft < x) x = tile.offsetLeft;
     }
     tr.target = Math.max(0, Math.min(x, tr.max));
-    if (instant) { tr.x = tr.target; paint(key); } else kick();
+    if (instant) { tr.x = tr.target; tr.v = 0; paint(key); } else kick();
   }
 
   // The tiles of a row in view where it is headed, as [first, last]: one
@@ -595,39 +643,62 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       if (busy) nextFrame(tick);
       else animating = false;
     }
-    if (!busy) settle();
+    if (busy) return;
+    settle();
+    // The minute's refresh, held back while a row moved (renderWhenStill).
+    if (renderWaiting) {
+      renderWaiting = false;
+      if (data && layout && !state.arranging) render();
+    }
   }
 
   function frame(now) {
     var dt = lastFrame ? Math.min(64, now - lastFrame) : 16;
     lastFrame = now;
-    var busy = false;
+    var s = dt / 1000, busy = false, glided = false;
     if (glide && state.held) glide = null;
-    if (glide) {
-      var g = trackOf(glide.key);
-      var to = Math.max(0, Math.min(g.max, g.target + glide.dir * GLIDE_MAX * glide.depth * glide.depth * dt / 1000));
-      if (to !== g.target) {
-        // Gliding moves the row itself; a wheel step still being eased to
-        // carries on easing.
-        if (Math.abs(g.target - g.x) < 1) g.x = to;
-        g.target = to;
-        paint(glide.key);
-        busy = true;
-        // The tile under a still pointer changes as the row glides past it.
-        if (now - lastHover > 120) {
-          lastHover = now;
-          hoverTile(document.elementFromPoint(pointerX, pointerY));
-        }
-      }
-      edges();
-    }
     for (var key in tracks) {
       if (!tracks.hasOwnProperty(key)) continue;
-      var tr = tracks[key], d = tr.target - tr.x;
-      if (d === 0) continue;
-      if (Math.abs(d) < 0.5) tr.x = tr.target;
-      else { tr.x += d * (1 - Math.exp(-dt / EASE_MS)); busy = true; }
-      paint(key);
+      var tr = tracks[key], was = tr.x;
+      var want = glide && glide.key === key ? glide.dir * GLIDE_MAX * glide.depth * glide.depth : 0;
+      if (want || tr.gv) {
+        var faster = want * tr.gv >= 0 && Math.abs(want) > Math.abs(tr.gv);
+        tr.gv += (want - tr.gv) * (1 - Math.exp(-dt / (faster ? GLIDE_IN : GLIDE_OUT)));
+        // No faster than can still stop at the row's end, braking evenly.
+        var cap = Math.sqrt(2 * BRAKE * Math.max(0, tr.gv > 0 ? tr.max - tr.target : tr.target));
+        if (Math.abs(tr.gv) > cap) tr.gv = tr.gv > 0 ? cap : -cap;
+        var from = tr.target;
+        tr.target = Math.max(0, Math.min(tr.max, tr.target + tr.gv * s));
+        // The glide moves the row itself; a wheel step on its way carries on.
+        tr.x += tr.target - from;
+        if (tr.target !== from) glided = true;
+        // A glide comes to rest on a whole pixel, where text is sharpest,
+        // the next one on, so the row does not step back to it.
+        if (!want && Math.abs(tr.gv) < 5) {
+          tr.target = Math.max(0, Math.min(tr.max, tr.gv > 0 ? Math.ceil(tr.target) : Math.floor(tr.target)));
+          tr.v += tr.gv;
+          tr.gv = 0;
+        }
+      }
+      var e = tr.x - tr.target;
+      if (e || tr.v) {
+        if (Math.abs(e) < 0.05 && Math.abs(tr.v) < 3) { tr.x = tr.target; tr.v = 0; }
+        else {
+          // The spring solved for the frame's length, so a long frame cannot
+          // make it overshoot or run away.
+          var k = Math.exp(-SPRING * s), c = tr.v + SPRING * e;
+          tr.x = tr.target + (e + c * s) * k;
+          tr.v = (c - SPRING * (e + c * s)) * k;
+        }
+      }
+      if (tr.x !== was) paint(key);
+      if (tr.gv || tr.v || tr.x !== tr.target) busy = true;
+    }
+    if (glide || glided) edges();
+    // The tile under a still pointer changes as a row glides past it.
+    if (glided && pointing && now - lastHover > 120) {
+      lastHover = now;
+      hoverTile(document.elementFromPoint(pointerX, pointerY));
     }
     return busy;
   }
@@ -683,7 +754,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     if (glide) kick();
   }
 
-  // The keys, or the pointer going away, end the pointer's scrolling.
+  // The keys, or the pointer going away, end the pointer's scrolling; a
+  // gliding row slows to a stop.
   function stopPointing() {
     if (!pointing && !glide) return;
     pointing = false;
@@ -709,6 +781,8 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     var tr = trackOf(key), step = tile.offsetWidth;
     var next = tile.nextSibling;
     if (next && next.offsetLeft) step = next.offsetLeft - tile.offsetLeft;
+    // On a row the pointer is gliding, the notch goes a tile further.
+    if (!glide || glide.key !== key) land(tr);
     tr.target = Math.max(0, Math.min(tr.max, tr.target + (d > 0 ? step : -step)));
     edges();
     kick();
@@ -1154,6 +1228,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
 
   function onKeyDown(e) {
     stopPointing();
+    landAll();
     if (!data || !layout) return;
     if (layoutBusy) { e.preventDefault(); return; }
     var k = e.keyCode;
@@ -1401,7 +1476,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       lastOn = r;
       renderNow();
       refreshPicture();
-      if (data && !state.arranging) render();
+      if (data && !state.arranging) renderWhenStill();
     });
   }
 
@@ -1410,7 +1485,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
     getJson('/api/home/guide', function (r) {
       if (!r || !r.guide) return;
       guideData = r.guide;
-      if (!state.arranging && data) render();
+      if (!state.arranging && data) renderWhenStill();
     });
   }
 
