@@ -188,12 +188,12 @@ WebOSWindow {
         textureSize: Qt.size(1000, 1000)
     }
 
-    // The ring, drifting about the middle.
+    // The ring, centred, drifting a little so no pixel stays lit the same.
     ShaderEffect {
         width: 1000
         height: 1000
-        x: 460 + 100 * Math.sin(win.phase(win.t, 600))
-        y: 40 + 30 * Math.sin(win.phase(win.t, 450) + 1.0)
+        x: 460 + 24 * Math.sin(win.phase(win.t, 600))
+        y: 40 + 12 * Math.sin(win.phase(win.t, 450) + 1.0)
         property variant source: frame
     }
 
