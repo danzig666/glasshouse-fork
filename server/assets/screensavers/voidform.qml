@@ -4,11 +4,12 @@
  * bends into two and three lobes, rises and falls like a saddle, and widens
  * and narrows, each on a cycle of its own.
  *
- * The ring is ray-marched in a fragment shader at its full 1000x1000, 30
- * times a second; drawn at 640x640 and scaled up, its edges and milling broke
- * up on a C3. On a C3 (webOS 10.2.2) the shader
- * draws when set up this way, as Veils in upstream PR #889 is, rendered
- * through a ShaderEffectSource.
+ * The ring is ray-marched in a fragment shader into an 800x800 texture, 30
+ * times a second, and scaled to 1000x1000. On a C3 (webOS 10.2.2) the march's
+ * short steps, which keep the ribbon's thin edge whole, made a full
+ * 1000x1000 pass a little choppy; 640x640 looked soft. The shader draws when
+ * set up this way, as Veils in upstream PR #889 is, rendered through a
+ * ShaderEffectSource.
  *
  * Kind to the panel: the background is black, the ring turns all the time,
  * and it drifts gently about the middle of the screen.
@@ -41,8 +42,8 @@ WebOSWindow {
 
     ShaderEffect {
         id: ring
-        width: 1000
-        height: 1000
+        width: 800
+        height: 800
         property real yaw: win.phase(win.t, 180)
         property real pitch: 0.55 + 0.35 * Math.sin(win.phase(win.t, 150))
         property real roll: 0.30 * Math.sin(win.phase(win.t, 216))
@@ -205,7 +206,7 @@ WebOSWindow {
         sourceItem: ring
         hideSource: true
         live: false
-        textureSize: Qt.size(1000, 1000)
+        textureSize: Qt.size(800, 800)
     }
 
     // The ring, centred, drifting a little so no pixel stays lit the same.
