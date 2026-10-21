@@ -9,7 +9,7 @@
  * short steps, which keep the ribbon's thin edge whole, made a full
  * 1000x1000 pass a little choppy; 640x640 looked soft. The shader draws when
  * set up this way, as Veils in upstream PR #889 is, rendered through a
- * ShaderEffectSource.
+ * ShaderEffectSource. The scale-up smooths the edges with FXAA.
  *
  * Kind to the panel: the background is black, the ring turns all the time,
  * and it drifts gently about the middle of the screen.
@@ -213,13 +213,48 @@ WebOSWindow {
         textureSize: Qt.size(800, 800)
     }
 
-    // The ring, centred, drifting a little so no pixel stays lit the same.
+    // The ring, centred, drifting a little so no pixel stays lit the same,
+    // scaled up with its edges smoothed: the march takes one sample a pixel,
+    // and four would cost the C3 four times the march.
     ShaderEffect {
         width: 1000
         height: 1000
         x: 460 + 24 * Math.sin(win.phase(win.t, 600))
         y: 40 + 12 * Math.sin(win.phase(win.t, 450) + 1.0)
         property variant source: frame
+        property size texel: Qt.size(1 / 800, 1 / 800)
+        fragmentShader: [
+            "precision highp float;",
+            "uniform sampler2D source;",
+            "uniform lowp float qt_Opacity;",
+            "uniform highp vec2 texel;",
+            "varying highp vec2 qt_TexCoord0;",
+            "// FXAA (after Timothy Lottes' FXAA 3.11, console version): find the edge's",
+            "// direction from the four diagonal neighbours and blend along it.",
+            "highp float luma(highp vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }",
+            "void main() {",
+            "    highp vec2 uv = qt_TexCoord0;",
+            "    highp vec3 rgbM = texture2D(source, uv).rgb;",
+            "    highp float lM = luma(rgbM);",
+            "    highp float lNW = luma(texture2D(source, uv + vec2(-1.0, -1.0) * texel).rgb);",
+            "    highp float lNE = luma(texture2D(source, uv + vec2(1.0, -1.0) * texel).rgb);",
+            "    highp float lSW = luma(texture2D(source, uv + vec2(-1.0, 1.0) * texel).rgb);",
+            "    highp float lSE = luma(texture2D(source, uv + vec2(1.0, 1.0) * texel).rgb);",
+            "    highp float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE)));",
+            "    highp float lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));",
+            "    highp vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));",
+            "    highp float reduce = max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078125);",
+            "    highp float rcpMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + reduce);",
+            "    dir = clamp(dir * rcpMin, vec2(-8.0), vec2(8.0)) * texel;",
+            "    highp vec3 rgbA = 0.5 * (texture2D(source, uv + dir * (1.0 / 3.0 - 0.5)).rgb +",
+            "                             texture2D(source, uv + dir * (2.0 / 3.0 - 0.5)).rgb);",
+            "    highp vec3 rgbB = rgbA * 0.5 + 0.25 * (texture2D(source, uv - dir * 0.5).rgb +",
+            "                                           texture2D(source, uv + dir * 0.5).rgb);",
+            "    highp float lB = luma(rgbB);",
+            "    highp vec3 aa = (lB < lMin || lB > lMax) ? rgbA : rgbB;",
+            "    gl_FragColor = vec4(aa, 1.0) * qt_Opacity;",
+            "}"
+        ].join("\n")
     }
 
     Timer {
