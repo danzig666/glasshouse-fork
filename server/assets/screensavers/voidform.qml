@@ -55,6 +55,9 @@ WebOSWindow {
         property real sr: Math.sin(roll)
         property real morph: Math.sin(win.phase(win.t, 120))
         property real twist: win.phase(win.t, 135)
+        // The saddle's own turn. Half of twist jumped by half a turn each
+        // time twist wrapped round, every 135 s, and the ring jumped with it.
+        property real spin2: win.phase(win.t, 270)
         property real dist: 3.1 + 0.2 * Math.sin(win.phase(win.t, 360))
         property real gain: win.level > 0 ? 0.92 : 0.62
         property real lobe2: Math.sin(win.phase(win.t, 240))
@@ -73,6 +76,7 @@ WebOSWindow {
             "uniform float sr;",
             "uniform float morph;",
             "uniform float twist;",
+            "uniform float spin2;",
             "uniform float dist;",
             "uniform float gain;",
             "uniform float lobe2;",
@@ -101,7 +105,7 @@ WebOSWindow {
             "    // The ring bends into two and three lobes and back, and rises and falls",
             "    // round its length like a saddle, each on a slow cycle of its own.",
             "    float bend = RING + 0.07 * lobe2 * sin(2.0 * a + twist) + 0.05 * lobe3 * sin(3.0 * a + spin3);",
-            "    float lift = 0.13 * wave * sin(2.0 * a - 0.5 * twist);",
+            "    float lift = 0.13 * wave * sin(2.0 * a - spin2);",
             "    vec2 q = vec2(length(p.xz) - bend, p.y - lift);",
             "    // Three half turns round the ring: the section is the same turned by",
             "    // half a turn, so the ribbon meets itself where atan wraps.",
