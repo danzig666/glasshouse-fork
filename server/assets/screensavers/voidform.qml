@@ -2,9 +2,9 @@
  * Voidform screen saver: a ring of brushed titanium ribbon, three half turns
  * round, turning slowly in a dark studio and changing shape as it goes.
  *
- * The ring is ray-marched in a fragment shader into a 640x640 texture, 30
- * times a second, and scaled up to 1000x1000: the metal is soft enough that
- * the lower resolution does not show. On a C3 (webOS 10.2.2) the shader
+ * The ring is ray-marched in a fragment shader at its full 1000x1000, 30
+ * times a second; drawn at 640x640 and scaled up, its edges and milling broke
+ * up on a C3. On a C3 (webOS 10.2.2) the shader
  * draws when set up this way, as Veils in upstream PR #889 is, rendered
  * through a ShaderEffectSource.
  *
@@ -39,8 +39,8 @@ WebOSWindow {
 
     ShaderEffect {
         id: ring
-        width: 640
-        height: 640
+        width: 1000
+        height: 1000
         property real yaw: win.phase(win.t, 180)
         property real pitch: 0.55 + 0.35 * Math.sin(win.phase(win.t, 150))
         property real roll: 0.30 * Math.sin(win.phase(win.t, 216))
@@ -185,10 +185,10 @@ WebOSWindow {
         sourceItem: ring
         hideSource: true
         live: false
-        textureSize: Qt.size(640, 640)
+        textureSize: Qt.size(1000, 1000)
     }
 
-    // The ring, scaled up and drifting about the middle.
+    // The ring, drifting about the middle.
     ShaderEffect {
         width: 1000
         height: 1000
