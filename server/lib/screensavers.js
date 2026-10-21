@@ -86,6 +86,11 @@ var SCREENSAVERS = {
     description: msg('srv.saver.geomesh.desc', 'The mesh of geomagnetic effects round an observer and their summed direction, after Attila Kőszeghy\'s The Geomagnetic Poles Will Not Swap Places.'),
     qml: 'screensavers/geomesh.qml'
   },
+  voidform: {
+    label: msg('srv.saver.voidform', 'Voidform'),
+    description: msg('srv.saver.voidform.desc', 'A ring of titanium ribbon, three half turns round, turning slowly in a dark studio.'),
+    qml: 'screensavers/voidform.qml'
+  },
   vitals: {
     label: msg('srv.saver.vitals', 'Panel vitals'),
     description: msg('srv.saver.vitals.desc', 'The TV\'s own readings - panel hours, pixel refresher countdown, temperature.'),
