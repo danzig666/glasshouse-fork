@@ -1,6 +1,8 @@
 /*
  * Voidform screen saver: a ring of brushed titanium ribbon, three half turns
- * round, turning slowly in a dark studio and changing shape as it goes.
+ * round, turning slowly in a dark studio and changing shape as it goes: it
+ * bends into two and three lobes, rises and falls like a saddle, and widens
+ * and narrows, each on a cycle of its own.
  *
  * The ring is ray-marched in a fragment shader at its full 1000x1000, 30
  * times a second; drawn at 640x640 and scaled up, its edges and milling broke
@@ -54,6 +56,10 @@ WebOSWindow {
         property real twist: win.phase(win.t, 135)
         property real dist: 3.1 + 0.2 * Math.sin(win.phase(win.t, 360))
         property real gain: win.level > 0 ? 0.92 : 0.62
+        property real lobe2: Math.sin(win.phase(win.t, 240))
+        property real lobe3: Math.sin(win.phase(win.t, 270) + 1.3)
+        property real wave: Math.sin(win.phase(win.t, 200) + 2.1)
+        property real spin3: win.phase(win.t, 432)
         fragmentShader: [
             "precision highp float;",
             "varying highp vec2 qt_TexCoord0;",
@@ -68,9 +74,13 @@ WebOSWindow {
             "uniform float twist;",
             "uniform float dist;",
             "uniform float gain;",
+            "uniform float lobe2;",
+            "uniform float lobe3;",
+            "uniform float wave;",
+            "uniform float spin3;",
             "",
             "const float RING = 0.62;",
-            "const float BOUND = 1.02;",
+            "const float BOUND = 1.08;",
             "",
             "// World to the ring's own space: yaw, then pitch, then roll.",
             "vec3 toObject(vec3 v) {",
@@ -87,8 +97,11 @@ WebOSWindow {
             "// The ribbon's cross-section at a point: across it in x, through it in y.",
             "vec2 section(vec3 p) {",
             "    float a = atan(p.z, p.x);",
-            "    float bend = RING + 0.05 * morph * sin(2.0 * a + twist);",
-            "    vec2 q = vec2(length(p.xz) - bend, p.y);",
+            "    // The ring bends into two and three lobes and back, and rises and falls",
+            "    // round its length like a saddle, each on a slow cycle of its own.",
+            "    float bend = RING + 0.07 * lobe2 * sin(2.0 * a + twist) + 0.05 * lobe3 * sin(3.0 * a + spin3);",
+            "    float lift = 0.13 * wave * sin(2.0 * a - 0.5 * twist);",
+            "    vec2 q = vec2(length(p.xz) - bend, p.y - lift);",
             "    // Three half turns round the ring: the section is the same turned by",
             "    // half a turn, so the ribbon meets itself where atan wraps.",
             "    float w = 1.5 * a + twist;",
@@ -98,7 +111,7 @@ WebOSWindow {
             "",
             "float ribbon(vec3 p) {",
             "    vec2 q = section(p);",
-            "    vec2 extent = vec2(0.25 + 0.05 * morph, 0.035);",
+            "    vec2 extent = vec2(0.24 + 0.06 * morph, 0.035);",
             "    vec2 d = abs(q) - extent + 0.025;",
             "    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - 0.025;",
             "}",
@@ -138,11 +151,11 @@ WebOSWindow {
             "        float t = -b - h, tEnd = -b + h;",
             "        float nearest = 1.0;",
             "        bool hit = false;",
-            "        for (int i = 0; i < 64; i++) {",
+            "        for (int i = 0; i < 80; i++) {",
             "            float s = ribbon(o + d * t);",
             "            nearest = min(nearest, s);",
             "            if (s < 0.0015) { hit = true; break; }",
-            "            t += s * 0.7;",
+            "            t += s * 0.55;",
             "            if (t > tEnd) break;",
             "        }",
             "        if (hit) {",
