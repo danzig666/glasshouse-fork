@@ -2055,5 +2055,17 @@
  "tv.update.serverHealth.hint": {"text": "A Glasshouse háttérfolyamatának memóriahasználata és üzemideje ezen a TV-n.", "from": "Memory footprint and uptime of the Glasshouse background process on this TV."},
  "tv.update.slow": {"text": "Az újraindítás a vártnál tovább tart", "from": "Restart is taking longer than expected"},
  "tv.update.whatsNew.more.hint": {"text": "A kiadási megjegyzések a GitHubon, a Glasshouse kiadásai között találhatók.", "from": "Their notes are on GitHub, under Glasshouse’s releases."},
- "tv.viewOnly": {"text": "Csak megtekintés", "from": "View only"}
+ "tv.viewOnly": {"text": "Csak megtekintés", "from": "View only"},
+ "home.plate.noVideo": {"text": "Még nincs rögzített videó", "from": "No video noted yet"},
+ "home.plate.sdrMode": {"text": "SDR mód", "from": "SDR mode"},
+ "home.source": {"text": "Utoljára nézett", "from": "What was last on"},
+ "home.sourceDesc": {"text": "Az óra mellett a Glasshouse Home-on: az utoljára használt bemenet, csatorna vagy alkalmazás.", "from": "Beside the clock on Glasshouse Home: the input, channel or app that was last on."},
+ "srv.saver.geomesh": {"text": "Geomágneses háló", "from": "Geomagnetic mesh"},
+ "srv.saver.geomesh.desc": {"text": "A megfigyelő körüli geomágneses hatások hálója és eredő irányuk, Kőszeghy Attila A geomágneses pólusok nem cserélnek helyet című könyve nyomán.", "from": "The mesh of geomagnetic effects round an observer and their summed direction, after Attila Kőszeghy's The Geomagnetic Poles Will Not Swap Places."},
+ "srv.saver.sacred": {"text": "Szent geometria", "from": "Sacred geometry"},
+ "srv.saver.sacred.desc": {"text": "Egy ikozaéder és duálisa, a dodekaéder együtt forog, finom fényvonalakban.", "from": "An icosahedron and its dual dodecahedron turning together, in fine lines of light."},
+ "srv.saver.tesseract": {"text": "Tesszerakt", "from": "Tesseract"},
+ "srv.saver.tesseract.desc": {"text": "Egy négydimenziós kocka, amely a negyedik dimenzión át forog, finom fényvonalakban.", "from": "A four-dimensional cube turning through the fourth dimension, in fine lines of light."},
+ "srv.saver.voidform": {"text": "Voidform", "from": "Voidform"},
+ "srv.saver.voidform.desc": {"text": "Három félfordulatú titánszalag-gyűrű, amely lassan forog egy sötét stúdióban.", "from": "A ring of titanium ribbon, three half turns round, turning slowly in a dark studio."}
 }
