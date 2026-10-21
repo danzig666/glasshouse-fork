@@ -7,8 +7,7 @@
  * sacred.js has the figure, and sets each edge's colour, widths and alphas,
  * so this file only lays them out: each edge is a thin rounded Rectangle
  * over a wider faint one for its glow, drawn by the scene graph with no
- * shader, since on a C3 (webOS 10.2.2) no ShaderEffect compiles in the screen
- * saver runner. The icosahedron leads, in ice-blue with a point of light at
+ * shader. The icosahedron leads, in ice-blue with a point of light at
  * each corner; the dodecahedron is cyan, the cube a faint amber.
  *
  * Kind to the panel: the background is black, every line moves all the time,

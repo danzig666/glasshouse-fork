@@ -1317,11 +1317,14 @@ wake-word listening does not run in standby.
 
 ## Shaders in the screen saver runner (webOS 10.2.2, C3)
 
-- **No ShaderEffect compiles.** Under `qml-runner` (Qt 5.12.12), with
-  `GraphicsInfo` reporting OpenGL ES 3.2 and runtime GLSL compilation, every
-  `ShaderEffect` ended with status Error and an empty `log`: a full raymarching
-  shader, and a one-line fragment shader writing `qt_TexCoord0`, inside a
-  layer or not. The same shaders compile in WebGL 1 (GLSL ES 1.00).
+- **ShaderEffect works, but its status may not say so.** Veils from
+  upstream PR #889 (QtQuick 2.4, a GLSL ES 2 fragment shader in a
+  `ShaderEffect`, scaled up through a `ShaderEffectSource`) drew its ribbons
+  under `qml-runner` (Qt 5.12.12). Earlier, a full raymarching shader and a
+  one-line fragment shader writing `qt_TexCoord0` both read status Error with
+  an empty `log`, with `GraphicsInfo` reporting OpenGL ES 3.2; why they
+  differ from Veils is not known, so a shader's `status` is not a reliable
+  test of whether it draws on this TV.
 - **Not LG's two scene graph settings.** The runner's environment has
   `QMLSCENE_DEVICE=customcontext` and
   `QSG_PROGRAM_BINARY_STORE=/var/cache/qsg-shader-cache`, a directory that

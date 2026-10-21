@@ -5,8 +5,7 @@
  * tesseract.js has the geometry: 16 corners and 32 edges, turned in the XW,
  * ZW and YW planes, projected from 4D to 3D and from 3D to the screen. Each
  * edge here is a thin rounded Rectangle laid along it, over a wider faint one
- * for its glow, so it is all drawn by the scene graph with no shader: on a C3
- * (webOS 10.2.2) no ShaderEffect compiles in the screen saver runner. The far
+ * for its glow, so it is all drawn by the scene graph with no shader. The far
  * edges are thinner, fainter and more violet than the near ones.
  *
  * Kind to the panel: the background is black, every line moves all the time,

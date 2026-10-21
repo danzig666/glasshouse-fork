@@ -13,8 +13,7 @@
  * lays it out. A mesh line is a Rectangle laid along it whose vertical
  * gradient carries the fade, over a wider faint one for its glow; the rest
  * are plain Rectangles. All of it is drawn by the scene graph with no
- * shader, since on a C3 (webOS 10.2.2) no ShaderEffect compiles in the screen
- * saver runner. The ring is placed once.
+ * shader. The ring is placed once.
  *
  * Kind to the panel: the background is black, the mesh and the vectors move
  * all the time, and the whole figure drifts gently about the middle.
