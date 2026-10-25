@@ -283,13 +283,33 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  // The words from the browser's locale, the order from the translation.
+  /*
+   * In a translation, the day and month names are its own: the page's
+   * language need not be the browser's locale, and the TV's engine may not
+   * carry the names for every locale. In English, the names come from the
+   * browser, so a TV in a language with no translation still shows its own.
+   */
+  function weekdayName(n) {
+    return [t('home.weekday.sun', 'Sunday'), t('home.weekday.mon', 'Monday'), t('home.weekday.tue', 'Tuesday'),
+      t('home.weekday.wed', 'Wednesday'), t('home.weekday.thu', 'Thursday'), t('home.weekday.fri', 'Friday'),
+      t('home.weekday.sat', 'Saturday')][n];
+  }
+  function monthName(n) {
+    return [t('home.month.jan', 'January'), t('home.month.feb', 'February'), t('home.month.mar', 'March'),
+      t('home.month.apr', 'April'), t('home.month.may', 'May'), t('home.month.jun', 'June'),
+      t('home.month.jul', 'July'), t('home.month.aug', 'August'), t('home.month.sep', 'September'),
+      t('home.month.oct', 'October'), t('home.month.nov', 'November'), t('home.month.dec', 'December')][n];
+  }
   function dateText(d) {
+    var translated = window.I18N && window.I18N.lang() !== 'en';
+    var locale = /[?&]lang=en\b/.test(location.search) ? 'en' : undefined;
     function part(opts) {
-      try { return d.toLocaleDateString(undefined, opts); } catch (e) { return ''; }
+      try { return d.toLocaleDateString(locale, opts); } catch (e) { return ''; }
     }
     return t('home.date', '{weekday} {day} {month}', {
-      weekday: part({ weekday: 'long' }), day: d.getDate(), month: part({ month: 'long' })
+      weekday: translated ? weekdayName(d.getDay()) : part({ weekday: 'long' }),
+      day: d.getDate(),
+      month: translated ? monthName(d.getMonth()) : part({ month: 'long' })
     });
   }
 
