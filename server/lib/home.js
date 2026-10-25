@@ -207,6 +207,9 @@ function defaults() {
     picture: false,
     // What was last on, beside the clock: shown unless switched off.
     showSource: true,
+    // The TV app's language, which Home's own storage does not share: 'auto'
+    // for the TV's menu language, or a two-letter code.
+    language: 'auto',
     // { text, accent } as #rrggbb, or null for the view's own colours.
     colours: null,
     // null until chosen: the first start keeps an empty layout an earlier build left.
@@ -252,6 +255,7 @@ function normalise(raw) {
   d.hintSeen = raw.hintSeen === true;
   d.picture = raw.picture === true;
   d.showSource = raw.showSource !== false;
+  d.language = /^(auto|[a-z]{2})$/.test(raw.language) ? raw.language : 'auto';
   d.colours = validColours(raw.colours);
   if (typeof raw.hideLgHomeAtStart === 'boolean') d.hideLgHomeAtStart = raw.hideLgHomeAtStart;
   if (typeof raw.lgAutoLaunch === 'string' && raw.lgAutoLaunch) d.lgAutoLaunch = raw.lgAutoLaunch;
@@ -357,6 +361,7 @@ function setLayout(body, cb) {
     hintSeen: body.hintSeen !== undefined ? body.hintSeen : c.hintSeen,
     picture: typeof body.picture === 'boolean' ? body.picture : c.picture,
     showSource: typeof body.showSource === 'boolean' ? body.showSource : c.showSource,
+    language: /^(auto|[a-z]{2})$/.test(body.language) ? body.language : c.language,
     // null puts the view's own colours back.
     colours: body.colours !== undefined ? body.colours : c.colours
   });
@@ -380,7 +385,7 @@ function setLayout(body, cb) {
 
 function layoutOf(c) {
   return { rows: c.rows, order: c.order, sort: c.sort, hidden: c.hidden, channels: c.channels, hintSeen: c.hintSeen, picture: c.picture,
-    showSource: c.showSource, colours: c.colours };
+    showSource: c.showSource, language: c.language, colours: c.colours };
 }
 
 // ---------------------------------------------------------------- what it shows

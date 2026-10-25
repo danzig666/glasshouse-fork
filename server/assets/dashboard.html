@@ -2660,9 +2660,13 @@ function activate() {
     case 'nextLanguage':
       var choices = languageChoices();
       if (!window.I18N) return;
-      window.I18N.choose(choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length]);
-      // Every text on the page is in the old language: load it again, on this tab.
-      location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now());
+      var language = choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length];
+      window.I18N.choose(language);
+      // Every text on the page is in the old language: load it again, on this
+      // tab, once Glasshouse Home has been told, as it cannot read this app's storage.
+      var reload = function () { location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now()); };
+      fetch('/api/home/layout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: language }) }).then(reload, reload);
       return;
     case 'updateCheck':
       r.value = t('tv.update.checking', 'Checking…');

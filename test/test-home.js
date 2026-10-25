@@ -1095,6 +1095,23 @@ step('what was last on shows until switched off, apart from the picture details,
   });
 });
 
+step('the TV app\'s language is kept for Glasshouse Home, auto unless one is picked', function (done) {
+  start(null);
+  assert.strictEqual(home.layout().language, 'auto');
+  assert.strictEqual(home.normalise({}).language, 'auto', 'a home.json from before follows the TV');
+  home.setLayout({ language: 'hu' }, function (r) {
+    assert.strictEqual(r.layout.language, 'hu');
+    home.setLayout({ language: 'hungarian' }, function (r2) {
+      assert.strictEqual(r2.layout.language, 'hu', 'kept when not a two-letter code or auto');
+      assert.strictEqual(home.normalise(JSON.parse(fs.readFileSync(path.join(dir, 'home.json'), 'utf8'))).language, 'hu');
+      home.setLayout({ language: 'auto' }, function (r3) {
+        assert.strictEqual(r3.layout.language, 'auto');
+        done();
+      });
+    });
+  });
+});
+
 step('only #rrggbb colours are kept, since the view writes them into its stylesheet', function (done) {
   start(null);
   var invalid = [
