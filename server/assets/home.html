@@ -1451,10 +1451,23 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       var firstLoad = !data;
       data = r;
       layout = r.layout;
-      // Home's language, set on the dashboards, which cannot reach this view's storage.
-      if (window.I18N && layout.language && layout.language !== window.I18N.stored()) {
-        window.I18N.choose(layout.language);
-        if (window.I18N.stored() === layout.language) { location.reload(); return; }
+      /*
+       * Home's own language, set on the dashboards and kept with the layout.
+       * It goes in the address, which i18n.js reads before its stored choice:
+       * the TV app has the same origin and so the same storage, and a choice
+       * stored here would change its language too. Auto is the TV's menu
+       * language, named outright so the TV app's stored choice is not used.
+       */
+      var wantLang = layout.language && layout.language !== 'auto' ? layout.language
+        : String((navigator.languages && navigator.languages[0]) || navigator.language || 'en').slice(0, 2).toLowerCase();
+      if (window.I18N && window.I18N.languages.indexOf(wantLang) === -1) wantLang = 'en';
+      // Reloaded only when it shows another language, which is rare.
+      if (window.I18N && wantLang !== window.I18N.lang()) {
+        var kept = location.search.replace(/^\?/, '').split('&').filter(function (p) { return p && !/^(lang|t)=/.test(p); });
+        kept.push('lang=' + wantLang);
+        kept.push('t=' + Date.now());
+        location.replace(location.pathname + '?' + kept.join('&'));
+        return;
       }
       applyColours(layout.colours);
       if (r.layoutVersion) layoutVersion = r.layoutVersion;
