@@ -7245,5 +7245,25 @@
  "ctl.dpad.keys": {
   "text": "Con un teclado: las flechas, Intro para OK, Esc o Retroceso para Atrás, H para Inicio, M para Ajustes, Espacio para reproducir o pausar, K para silenciar.",
   "from": "On a keyboard: the arrows, Enter for OK, Esc or Backspace for Back, H for Home, M for Settings, Space to play or pause, K to mute."
- }
+ },
+ "home.weekday.sun": {"text": "domingo", "from": "Sunday"},
+ "home.weekday.mon": {"text": "lunes", "from": "Monday"},
+ "home.weekday.tue": {"text": "martes", "from": "Tuesday"},
+ "home.weekday.wed": {"text": "miércoles", "from": "Wednesday"},
+ "home.weekday.thu": {"text": "jueves", "from": "Thursday"},
+ "home.weekday.fri": {"text": "viernes", "from": "Friday"},
+ "home.weekday.sat": {"text": "sábado", "from": "Saturday"},
+ "home.month.jan": {"text": "enero", "from": "January"},
+ "home.month.feb": {"text": "febrero", "from": "February"},
+ "home.month.mar": {"text": "marzo", "from": "March"},
+ "home.month.apr": {"text": "abril", "from": "April"},
+ "home.month.may": {"text": "mayo", "from": "May"},
+ "home.month.jun": {"text": "junio", "from": "June"},
+ "home.month.jul": {"text": "julio", "from": "July"},
+ "home.month.aug": {"text": "agosto", "from": "August"},
+ "home.month.sep": {"text": "septiembre", "from": "September"},
+ "home.month.oct": {"text": "octubre", "from": "October"},
+ "home.month.nov": {"text": "noviembre", "from": "November"},
+ "home.month.dec": {"text": "diciembre", "from": "December"},
+ "home.date": {"text": "{weekday} {day} de {month}", "from": "{weekday} {day} {month}"}
 }
