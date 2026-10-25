@@ -655,7 +655,31 @@ function appearanceRows() {
     act: 'toggleTheme',
     press: currentTheme === 'light' ? t('tv.appearance.toDark', 'Press OK to switch to Dark theme') : t('tv.appearance.toLight', 'Press OK to switch to Light theme'),
     hint: t('tv.appearance.theme.hint', 'Switches the dashboard interface between Dark (true black for OLED) and Light theme.')
-  }];
+  }, languageRow()];
+}
+
+// Each language named in itself, as a language picker does.
+function languageName(code) {
+  if (code === 'auto') return t('tv.appearance.language.auto', 'Auto (the TV\u2019s language)');
+  return { en: 'English', es: 'Espa\u00f1ol', hu: 'Magyar' }[code] || code.toUpperCase();
+}
+
+// Auto, English, then each translation; OK steps to the next.
+function languageChoices() {
+  return ['auto', 'en'].concat(window.I18N ? window.I18N.languages : []);
+}
+
+function languageRow() {
+  var choices = languageChoices(), now = window.I18N ? window.I18N.stored() : 'auto';
+  var next = choices[(choices.indexOf(now) + 1) % choices.length];
+  return {
+    label: t('server.language.title', 'Language'),
+    value: languageName(now),
+    cls: 'act',
+    act: 'nextLanguage',
+    press: t('tv.appearance.language.press', 'Press OK for {language}', { language: languageName(next) }),
+    hint: t('tv.appearance.language.hint', 'The language of this app. Auto follows the TV\u2019s menu language.')
+  };
 }
 
 /*
@@ -2632,6 +2656,13 @@ function activate() {
         rows = settingsRows(data.settings || {});
         render();
       }
+      return;
+    case 'nextLanguage':
+      var choices = languageChoices();
+      if (!window.I18N) return;
+      window.I18N.choose(choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length]);
+      // Every text on the page is in the old language: load it again, on this tab.
+      location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now());
       return;
     case 'updateCheck':
       r.value = t('tv.update.checking', 'Checking…');
