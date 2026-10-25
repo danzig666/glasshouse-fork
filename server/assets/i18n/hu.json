@@ -2070,5 +2070,8 @@
  "srv.saver.voidform.desc": {"text": "Három félfordulattal megcsavart titánszalagból formált gyűrű, amely lassan forog egy sötét stúdióban.", "from": "A ring of titanium ribbon, three half turns round, turning slowly in a dark studio."},
  "tv.appearance.language.auto": {"text": "Automatikus (a TV nyelve)", "from": "Auto (the TV’s language)"},
  "tv.appearance.language.press": {"text": "Nyomja meg az OK gombot: {language}", "from": "Press OK for {language}"},
- "tv.appearance.language.hint": {"text": "Az alkalmazás nyelve. Az Automatikus a TV menüjének nyelvét követi.", "from": "The language of this app. Auto follows the TV’s menu language."}
+ "tv.appearance.language.hint": {"text": "Az alkalmazás nyelve. Az Automatikus a TV menüjének nyelvét követi.", "from": "The language of this app. Auto follows the TV’s menu language."},
+ "home.language": {"text": "Nyelv", "from": "Language"},
+ "home.languageDesc": {"text": "A Glasshouse Home nyelve, ettől az alkalmazástól függetlenül. Az Automatikus a TV menüjének nyelvét követi.", "from": "The language of Glasshouse Home, apart from this app’s. Auto follows the TV’s menu language."},
+ "home.languageWebDesc": {"text": "A Glasshouse Home nyelve a TV-n, a vezérlőpultoktól függetlenül. Az Automatikus a TV menüjének nyelvét követi. Minden kattintás a következőre lép.", "from": "The language of Glasshouse Home on the TV, apart from the dashboards'. Auto follows the TV's menu language. Each press steps to the next."}
 }

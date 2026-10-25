@@ -207,8 +207,9 @@ function defaults() {
     picture: false,
     // What was last on, beside the clock: shown unless switched off.
     showSource: true,
-    // The TV app's language, which Home's own storage does not share: 'auto'
-    // for the TV's menu language, or a two-letter code.
+    // Home's own language, set apart from the TV app's: 'auto' for the TV's
+    // menu language, or a two-letter code. Kept here because Home's browser
+    // storage is its own, out of the dashboards' reach.
     language: 'auto',
     // { text, accent } as #rrggbb, or null for the view's own colours.
     colours: null,

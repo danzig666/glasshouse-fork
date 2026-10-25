@@ -1095,7 +1095,7 @@ step('what was last on shows until switched off, apart from the picture details,
   });
 });
 
-step('the TV app\'s language is kept for Glasshouse Home, auto unless one is picked', function (done) {
+step('Glasshouse Home\'s language is kept on the server, auto unless one is picked', function (done) {
   start(null);
   assert.strictEqual(home.layout().language, 'auto');
   assert.strictEqual(home.normalise({}).language, 'auto', 'a home.json from before follows the TV');

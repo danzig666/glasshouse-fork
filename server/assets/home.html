@@ -1451,7 +1451,7 @@ body{font-family:'Manrope',sans-serif;color:#ece7df;-webkit-font-smoothing:antia
       var firstLoad = !data;
       data = r;
       layout = r.layout;
-      // The language picked in the TV app, which this view's storage does not share.
+      // Home's language, set on the dashboards, which cannot reach this view's storage.
       if (window.I18N && layout.language && layout.language !== window.I18N.stored()) {
         window.I18N.choose(layout.language);
         if (window.I18N.stored() === layout.language) { location.reload(); return; }

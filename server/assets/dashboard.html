@@ -905,6 +905,12 @@ function homeRows(d) {
              act: can ? 'homeSource' : null, on: srcOn,
              press: srcOn ? t('tv.press.switchOff', 'Press OK to switch off') : t('tv.press.switchOn', 'Press OK to switch on'),
              hint: t('home.sourceDesc', 'Beside the clock on Glasshouse Home: the input, channel or app that was last on.') });
+    var homeLang = d.layout.language || 'auto', langs = languageChoices();
+    var nextLang = langs[(langs.indexOf(homeLang) + 1) % langs.length];
+    r.push({ label: t('home.language', 'Language'), value: languageName(homeLang), cls: 'act',
+             act: can ? 'homeLanguage' : null, key: nextLang,
+             press: t('tv.appearance.language.press', 'Press OK for {language}', { language: languageName(nextLang) }),
+             hint: t('home.languageDesc', 'The language of Glasshouse Home, apart from this app\u2019s. Auto follows the TV\u2019s menu language.') });
     // OK steps through the presets; colours picked on the browser dashboard show as Custom.
     var presets = d.colourPresets || [], cur = d.layout.colours, at = cur ? -1 : 0;
     for (var pi = 0; pi < presets.length; pi++) if (cur && presets[pi].text === cur.text && presets[pi].accent === cur.accent) at = pi;
@@ -2487,6 +2493,8 @@ function activate() {
       return homeLayout({ picture: !r.on });
     case 'homeSource':
       return homeLayout({ showSource: !r.on });
+    case 'homeLanguage':
+      return homeLayout({ language: r.key });
     case 'homeColours':
       // The first preset is the view's own colours, saved as none chosen.
       return homeLayout({ colours: r.key.id === homeData.colourPresets[0].id ? null : { text: r.key.text, accent: r.key.accent } });
@@ -2660,13 +2668,9 @@ function activate() {
     case 'nextLanguage':
       var choices = languageChoices();
       if (!window.I18N) return;
-      var language = choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length];
-      window.I18N.choose(language);
-      // Every text on the page is in the old language: load it again, on this
-      // tab, once Glasshouse Home has been told, as it cannot read this app's storage.
-      var reload = function () { location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now()); };
-      fetch('/api/home/layout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ language: language }) }).then(reload, reload);
+      window.I18N.choose(choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length]);
+      // Every text on the page is in the old language: load it again, on this tab.
+      location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now());
       return;
     case 'updateCheck':
       r.value = t('tv.update.checking', 'Checking…');

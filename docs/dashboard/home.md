@@ -25,6 +25,8 @@ App video tracking runs while Glasshouse Home and **Picture details** are on and
 
 **What was last on**, also on the tab and in the TV app's Home section, is the input, channel or app beside the clock. It is on by default and is a switch of its own: switching it off leaves the clock and, with **Picture details** on, the plate.
 
+**Language**, on the tab and in the TV app's Home section, is Glasshouse Home's own, apart from the dashboards': Auto follows the TV's menu language, and each press steps to English or a translation. Home switches to it within a few seconds.
+
 The background is black. The browser dashboard can add an image for each time of day (morning 06:00, afternoon 11:00, evening 17:00, night 21:00): choose a **Time of day**, select a JPEG, PNG or WebP file up to 25 MB, then press **Upload image**. The browser fits it within 1920 × 1080 pixels, the size Glasshouse Home is drawn at, and prepares a JPEG before sending it to the TV. Images fill the screen, may be cropped, and drift slowly. **Remove uploaded images** puts black back. None are included with Glasshouse.
 
 Uploads are stored in `/var/lib/tvweb/home-wallpaper-uploads`, outside the update and rollback payload. A failed or interrupted upload leaves the previous image intact. The directory is removed when Glasshouse is uninstalled; the layout backup does not include image files.

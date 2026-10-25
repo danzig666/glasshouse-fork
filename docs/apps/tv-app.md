@@ -51,7 +51,7 @@ All choices made during setup can be changed at any time from the TV app's **Set
 
 ### Pairing and settings
 
-Its **Settings** tab gives the web dashboard's address, with a QR code to scan on a phone, and the TV's DNS name under it where the home network's DNS has one. Under Appearance, **Language** steps through Auto, which follows the TV's menu language, and each language Glasshouse is translated into; the app reloads in the one chosen, and Glasshouse Home follows it.
+Its **Settings** tab gives the web dashboard's address, with a QR code to scan on a phone, and the TV's DNS name under it where the home network's DNS has one. Under Appearance, **Language** steps through Auto, which follows the TV's menu language, and each language Glasshouse is translated into; the app reloads in the one chosen. Glasshouse Home has a Language of its own in the Home section.
 
 Scanning the code automatically pairs the phone with the TV, passing the access token if one is configured, allowing the dashboard to be opened without typing an IP address with the remote.
 

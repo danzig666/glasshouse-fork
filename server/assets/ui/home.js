@@ -108,6 +108,14 @@ function renderHome() {
     updateToggle(src, { cls: on ? 'good' : 'idle', label: on ? t('common.on', 'On') : t('common.off', 'Off') });
     src.disabled = !homeWritable();
   }
+  const langRow = q('home-language-row');
+  if (langRow) langRow.hidden = !st.supported.ok;
+  const lang = q('home-language');
+  if (lang) {
+    const code = (st.layout && st.layout.language) || 'auto';
+    updateToggle(lang, { cls: code === 'auto' ? 'idle' : 'good', label: homeLanguageName(code) });
+    lang.disabled = !homeWritable();
+  }
   const hide = q('home-hide-lg');
   if (hide) {
     const armed = homeArmed === 'hide';
@@ -344,6 +352,18 @@ function homePicture() {
 
 function homeSource() {
   homeSaveLayout({ showSource: homeLayout.showSource === false });
+}
+
+// Each language named in itself; Auto follows the TV's menu language.
+function homeLanguageName(code) {
+  if (code === 'auto') return t('theme.auto', 'Auto');
+  return { en: 'English', es: 'Español', hu: 'Magyar' }[code] || code.toUpperCase();
+}
+
+function homeLanguage() {
+  const choices = ['auto', 'en'].concat(window.I18N ? window.I18N.languages : []);
+  const now = (homeLayout && homeLayout.language) || 'auto';
+  homeSaveLayout({ language: choices[(choices.indexOf(now) + 1) % choices.length] });
 }
 
 // Added channels are the Channels row; this finds more to add. Built once, then only its list redraws.
