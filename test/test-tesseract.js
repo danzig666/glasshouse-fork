@@ -11,8 +11,8 @@ var path = require('path');
 
 console.log('Running test-tesseract.js ...');
 
-// The file is imported by tesseract.qml, not required: its names are read here.
-var src = fs.readFileSync(path.join(__dirname, '..', 'server', 'assets', 'screensavers', 'tesseract.js'), 'utf8');
+// The file is imported by tesseract/main.qml, not required: its names are read here.
+var src = fs.readFileSync(path.join(__dirname, '..', 'server', 'assets', 'screensavers', 'tesseract', 'tesseract.js'), 'utf8');
 var T = {};
 /* jshint evil: true */
 new Function('exports', src + '\nexports.frame = frame; exports.rotate = rotate; exports.tint = tint;' +
