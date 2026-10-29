@@ -147,7 +147,10 @@ console.log('Running test-screensavers.js ...');
   assert.ok(ids.indexOf('currents') !== -1, 'catalog must include currents');
   assert.ok(ids.indexOf('veils') !== -1, 'catalog must include veils');
   assert.ok(ids.indexOf('tesseract') !== -1, 'catalog must include tesseract');
-  assert.strictEqual(ids.length, 15, 'catalog must have exactly 15 entries');
+  assert.ok(ids.indexOf('sacred') !== -1, 'catalog must include sacred');
+  assert.ok(ids.indexOf('geomesh') !== -1, 'catalog must include geomesh');
+  assert.ok(ids.indexOf('voidform') !== -1, 'catalog must include voidform');
+  assert.strictEqual(ids.length, 18, 'catalog must have exactly 18 entries');
 
   // Each of Glasshouse's own reads cleanly from its folder
   for (var i = 0; i < all.length; i++) {
@@ -155,7 +158,7 @@ console.log('Running test-screensavers.js ...');
     assert.strictEqual(all[i].builtin, true);
   }
 
-  console.log('  ✓ the catalog has Glasshouse\'s 14 screen savers and LG\'s, each read from its folder');
+  console.log('  ✓ the catalog has Glasshouse\'s 17 screen savers and LG\'s, each read from its folder');
 })();
 
 // 8. trigger returns error when luna is not available

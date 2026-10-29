@@ -1,0 +1,19 @@
+{
+  "manifest": 1,
+  "version": "1.0.0",
+  "name": {
+    "en": "Sacred geometry",
+    "es": "Geometría sagrada",
+    "hu": "Szakrális geometria"
+  },
+  "description": {
+    "en": "An icosahedron and its dual dodecahedron turning together, in fine lines of light.",
+    "es": "Un icosaedro y su dodecaedro dual girando juntos, en finas líneas de luz.",
+    "hu": "Finom fényvonalakkal kirajzolt ikozaéder és duális párja, a dodekaéder, együtt forog."
+  },
+  "license": "MIT",
+  "uses": [
+    "level"
+  ],
+  "order": 141
+}

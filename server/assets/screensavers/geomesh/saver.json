@@ -1,0 +1,19 @@
+{
+  "manifest": 1,
+  "version": "1.0.0",
+  "name": {
+    "en": "Geomagnetic mesh",
+    "es": "Malla geomagnética",
+    "hu": "Geomágneses háló"
+  },
+  "description": {
+    "en": "The mesh of geomagnetic effects round an observer and their summed direction, after Attila Kőszeghy's The Geomagnetic Poles Will Not Swap Places.",
+    "es": "La malla de efectos geomagnéticos alrededor de un observador y su dirección sumada, según el libro de Attila Kőszeghy The Geomagnetic Poles Will Not Swap Places.",
+    "hu": "A megfigyelő körüli geomágneses hatások hálója és eredő irányuk, Kőszeghy Attila A geomágneses pólusok nem cserélnek helyet című műve nyomán."
+  },
+  "license": "MIT",
+  "uses": [
+    "level"
+  ],
+  "order": 142
+}

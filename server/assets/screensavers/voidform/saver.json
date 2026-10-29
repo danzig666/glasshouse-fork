@@ -1,0 +1,19 @@
+{
+  "manifest": 1,
+  "version": "1.0.0",
+  "name": {
+    "en": "Voidform",
+    "es": "Voidform",
+    "hu": "Voidform"
+  },
+  "description": {
+    "en": "A ring of titanium ribbon, three half turns round, turning slowly in a dark studio.",
+    "es": "Un anillo de cinta de titanio, de tres medias vueltas, que gira despacio en un estudio oscuro.",
+    "hu": "Három félfordulattal megcsavart titánszalagból formált gyűrű, amely lassan forog egy sötét stúdióban."
+  },
+  "license": "MIT",
+  "uses": [
+    "level"
+  ],
+  "order": 143
+}

@@ -86,6 +86,9 @@ assets/screensavers/neo/main.qml assets/screensavers/neo/saver.json \
 assets/screensavers/starfield/main.qml assets/screensavers/starfield/saver.json \
 assets/screensavers/starfield/star.png assets/screensavers/tesseract/main.qml \
 assets/screensavers/tesseract/saver.json assets/screensavers/tesseract/tesseract.js \
+assets/screensavers/sacred/main.qml assets/screensavers/sacred/saver.json assets/screensavers/sacred/sacred.js \
+assets/screensavers/geomesh/main.qml assets/screensavers/geomesh/saver.json assets/screensavers/geomesh/geomesh.js \
+assets/screensavers/voidform/main.qml assets/screensavers/voidform/saver.json \
 assets/screensavers/veils/main.qml \
 assets/screensavers/veils/saver.json assets/screensavers/vitals/main.qml \
 assets/screensavers/vitals/saver.json assets/screensavers/vortex/main.qml \

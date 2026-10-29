@@ -1,6 +1,6 @@
 # Screen savers
 
-The **Screensaver** tab, `/?tab=screensaver`, provides fourteen alternatives to LG's default, and any added on the TV:
+The **Screensaver** tab, `/?tab=screensaver`, provides seventeen alternatives to LG's default, and any added on the TV:
 
 * Clock
 * Starfield
@@ -15,6 +15,9 @@ The **Screensaver** tab, `/?tab=screensaver`, provides fourteen alternatives to 
 * Neo, columns of falling glyphs whose colors turn every minute
 * Harmonograph, pendulum ribbons of light weaving and fading on black
 * Tesseract, a four-dimensional cube turning through the fourth dimension, in fine lines of light that dim and turn violet with depth
+* Sacred geometry, an icosahedron and its dual dodecahedron turning together, the dodecahedron breathing between sitting inside the icosahedron and crossing it as their compound, with the cube in the dodecahedron
+* Geomagnetic mesh, after Attila Kőszeghy's *The Geomagnetic Poles Will Not Swap Places* (T4Terv, 2021): the mesh of geomagnetic effects round an observer, fading with the inverse square of distance, the triad to the three nearest intersections and its summed direction, inside the rampart of Goseck with its three gates and the degree ring of the book's transmission circle diagram. As the mesh is squeezed north-south the summed direction swings south and back, while north on the ring stays put. The ground plane they lie on leans back and swings from side to side in 3D inside the flat ring, north still at the top
+* Voidform, a ring of brushed titanium ribbon, three half turns round, turning slowly in a dark studio and changing shape as it goes, bending into two and three lobes and rising and falling like a saddle, drawn by a shader
 * Panel vitals, showing the TV's own panel hours and refresher countdown
 
 Each mode offers dim and bright variants, and visual elements continuously drift across the screen to prevent OLED burn-in or image retention. The clock and the time on Panel vitals draw 12-hour or 24-hour time as the TV's own time setting has it, and pick up a change the next time the screen saver starts.
