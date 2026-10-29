@@ -1836,7 +1836,7 @@ function releaseUnloadedHome() {
 
 // Glasshouse Home started, where its files loaded.
 function startGlasshouseHome() {
-  homePicture.init({ telemetry: telemetry, oled: oled, luna: luna, Subscription: lunaTransport.Subscription });
+  homePicture.init({ telemetry: telemetry, oled: oled, luna: luna, Subscription: lunaTransport.Subscription, stateDir: __dirname });
   homePicture.want('tv', (liveState.state.snapshot().power || {}).systemOn !== false);
   var homeWatchesForeground = false;
   glasshouseHome.init({

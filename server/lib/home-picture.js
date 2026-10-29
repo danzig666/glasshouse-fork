@@ -18,13 +18,22 @@
  * An app's video is gone once it closes, so it is noted while it plays:
  * videooutput's getStatus, subscribed, names the app on the main sink with
  * its size, frame rate and HDR type (Netflix on a G3: 3840x2160, 23.976 Hz,
- * DolbyVision). The last video each app played is kept, in memory, and a
- * stop leaves it in place. The subscription runs while Glasshouse Home and its
- * picture details are on and the TV is, including before the first visit, so
- * the first video is captured.
+ * DolbyVision; YouTube on a C3, webOS 10.2.2: 1920x1080, 60 Hz, none). The
+ * last video each app played is kept, and a stop leaves it in place. It is
+ * written to home-picture.json too, since the server restarts at every cold
+ * start on webOS 10 and at every update. The subscription runs while
+ * Glasshouse Home and its picture details are on and the TV is, including
+ * before the first visit, so the first video is captured.
+ *
+ * Where there is no signal to go by, an app that has played nothing yet or an
+ * input whose receiver has no lock, the mode the source gets in SDR is shown
+ * with it, as for a channel: a C3 answered it at once while the plate, asking
+ * only after a signal, showed nothing.
  *
  * Strict ES5: runs on node 0.12.
  */
+var fs = require('fs');
+var path = require('path');
 var names = require('./names');
 var readTrimmed = require('./util').readTrimmed;
 
@@ -42,6 +51,10 @@ var cache = {};
 var SubscriptionType = null;
 var videoSub = null;
 var played = {};
+// Where noted videos are kept across restarts; none in tests unless given.
+var stateDir = null;
+// More than this and the apps noted longest ago are dropped.
+var MAX_PLAYED = 40;
 // What the subscription waits on: Glasshouse Home, its picture details, and
 // the TV out of standby, which is taken as on until the power state says not.
 var wants = { home: false, details: false, tv: true };
@@ -56,7 +69,8 @@ function init(opts) {
   nowMs = opts.now || Date.now;
   SubscriptionType = opts.Subscription || null;
   cache = {};
-  played = {};
+  stateDir = opts.stateDir || null;
+  played = loadPlayed();
   wants = { home: false, details: false, tv: true };
 }
 
@@ -92,11 +106,48 @@ function appVideo(reply) {
   return null;
 }
 
+function playedFile() { return stateDir ? path.join(stateDir, 'home-picture.json') : null; }
+
+function loadPlayed() {
+  var file = playedFile(), out = {};
+  if (!file) return out;
+  try {
+    var j = JSON.parse(fs.readFileSync(file, 'utf8'));
+    Object.keys(j.played || {}).forEach(function (id) {
+      var v = j.played[id];
+      if (v && v.width > 0 && v.height > 0) out[id] = v;
+    });
+  } catch (e) {}
+  return out;
+}
+
+// Written only when an app's video changes, not at every push, and kept to
+// the MAX_PLAYED apps noted last.
+function savePlayed() {
+  var file = playedFile();
+  if (!file) return;
+  var ids = Object.keys(played);
+  while (ids.length > MAX_PLAYED) delete played[ids.shift()];
+  try {
+    fs.writeFileSync(file + '.tmp', JSON.stringify({ played: played }) + '\n', 'utf8');
+    fs.renameSync(file + '.tmp', file);
+  } catch (e) {
+    console.log('home-picture: could not keep the videos noted: ' + e.message);
+  }
+}
+
 function notePlaying(reply) {
   var seen = appVideo(reply);
   if (!seen) return;
+  var before = played[seen.appId], ids = Object.keys(played);
+  // getStatus pushes while a video plays: unchanged and already newest is
+  // written once, not at every push.
+  if (before && JSON.stringify(before) === JSON.stringify(seen.signal) && ids[ids.length - 1] === seen.appId) return;
+  // Newest last, so the apps played longest ago are the ones dropped.
+  delete played[seen.appId];
   played[seen.appId] = seen.signal;
   delete cache['app:' + seen.appId];
+  savePlayed();
 }
 
 function start() {
@@ -213,8 +264,9 @@ function oledLight(input, mode, cb) {
  * The plate for what was last on: kind 'input' with its port, 'channel', or
  * 'app' with its id. cb({ ok, input, signal, range, mode, light, oled }), where
  * range is the dynamic range the signal is shown in and mode the picture mode
- * it gets. A channel is taken as SDR; an input or app with no signal to go by
- * has neither.
+ * it gets. With no signal to go by, a channel always and an app or input
+ * when nothing was noted or locked, the source is taken as SDR, and assumed
+ * says so.
  */
 function picture(kind, port, cb, appId) {
   var inputs = { input: 'hdmi' + port, channel: 'dtv', app: 'default' };
@@ -226,15 +278,17 @@ function picture(kind, port, cb, appId) {
   if (hit && nowMs() - hit.at < CACHE_MS) return cb(hit.value);
   var lastPlayed = kind === 'app' && appId && played.hasOwnProperty(appId) ? played[appId] : null;
   (kind === 'input' ? hdmiSignal : function (p, next) { next(lastPlayed); })(port, function (signal) {
-    // A channel's signal is not read, and broadcast is almost all SDR.
-    var range = signal ? rangeOf(signal.hdr) : kind === 'channel' ? 'sdr' : null;
+    // A channel's signal is not read, and broadcast is almost all SDR; an
+    // app or input with nothing to go by gets the mode it would in SDR.
+    var range = signal ? rangeOf(signal.hdr) : 'sdr';
     pictureMode(input, range, function (mode) {
       oledLight(input, mode ? mode.raw : null, function (light) {
         // An LCD's backlight is the same setting, under its own name.
         (oled ? oled.detectOled : function (next) { next(false); })(function (isOled) {
-          var value = { ok: true, input: input, signal: signal, range: range, mode: mode,
+          var value = { ok: true, input: input, signal: signal, range: range, assumed: !signal, mode: mode,
             light: light, oled: !!isOled };
-          cache[key] = { at: nowMs(), value: value };
+          // A failed read is asked again next time rather than kept.
+          if (mode) cache[key] = { at: nowMs(), value: value };
           cb(value);
         });
       });

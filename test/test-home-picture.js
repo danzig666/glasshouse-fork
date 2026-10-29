@@ -90,20 +90,44 @@ homePicture.picture('input', 4, function (r) {
 asked = setUp(FILES);
 homePicture.picture('input', 2, function (r) {
   assert.equal(r.signal, null);
-  assert.equal(r.range, null);
-  assert.equal(r.mode, null);
-  assert.equal(r.light, null);
-  assert.equal(asked.length, 0, 'no mode is asked for without a signal');
-  console.log('  ✓ an input with nothing connected has no mode to show');
+  assert.equal(r.range, 'sdr');
+  assert.equal(r.assumed, true);
+  assert.equal(r.mode.raw, 'filmMaker');
+  assert.equal(r.light, 95);
+  assert.deepEqual(asked.map(function (a) { return a.keys[0] + ':' + (a.dimension.dynamicRange || a.dimension.pictureMode); }),
+    ['pictureMode:sdr', 'backlight:filmMaker'], 'with no signal, the SDR mode and its light');
+  console.log('  ✓ an input with nothing connected shows the mode it gets in SDR, marked as assumed');
 });
 
+// A C3 (webOS 10.2.2) answered the mode for apps at once, while the plate,
+// asking only after a video was noted, showed nothing.
 setUp({});
 homePicture.picture('app', null, function (r) {
   assert.equal(r.input, 'default');
   assert.equal(r.signal, null);
-  assert.equal(r.mode, null);
-  console.log('  ✓ an app that has played nothing has no mode to show');
+  assert.equal(r.assumed, true);
+  assert.equal(r.mode.raw, 'filmMaker');
+  assert.equal(r.light, 95);
+  console.log('  ✓ an app that has played nothing yet still shows its SDR mode and light');
 });
+
+// A failed mode read is asked again on the next request, not kept for 10 s.
+(function () {
+  var answers = 0;
+  homePicture.init({
+    telemetry: { hdmiReceiverMap: function (cb) { cb({}); } },
+    oled: { detectOled: function (cb) { cb(true); } },
+    readFile: function () { return null; },
+    luna: function (uri, payload, cb) {
+      if (payload.keys[0] === 'pictureMode') return cb(++answers === 1 ? { returnValue: false } : { returnValue: true, settings: { pictureMode: 'expert1' } });
+      cb({ returnValue: true, settings: { backlight: 100 } });
+    }
+  });
+  homePicture.picture('app', null, function (r) { assert.equal(r.mode, null); }, 'x');
+  homePicture.picture('app', null, function (r) { assert.equal(r.mode.raw, 'expert1'); assert.equal(r.light, 100); }, 'x');
+  assert.equal(answers, 2);
+  console.log('  ✓ a failed mode read is not cached');
+})();
 
 setUp({});
 homePicture.picture('channel', null, function (r) {
@@ -165,6 +189,66 @@ assert.equal(stops, 3, 'switching Glasshouse Home off stops tracking');
 homePicture.picture('app', null, function (r) { assert.equal(r.signal.hdr, 'dolby_vision'); }, 'netflix');
 assert.equal(subscribed.length, 3, 'reading the plate after disabling does not restart tracking');
 console.log('  ✓ tracking runs while Home, picture details and the TV are on, and keeps what it saw');
+
+// Noted videos are kept in home-picture.json, written only when one changes,
+// and read back by the next start: the server restarts at every cold start on
+// webOS 10. YouTube as a C3 (webOS 10.2.2) reported it.
+(function () {
+  var os = require('os');
+  var dir = path.join(os.tmpdir(), 'tvweb-home-picture-' + process.pid);
+  var file = path.join(dir, 'home-picture.json');
+  function clean() {
+    [file, file + '.tmp'].forEach(function (f) { try { fs.unlinkSync(f); } catch (e) {} });
+    try { fs.rmdirSync(dir); } catch (e) {}
+  }
+  clean();
+  fs.mkdirSync(dir);
+  var push;
+  var youtube = { video: [{ sink: 'MAIN', connected: true, connectedSource: 'VDEC', appId: 'com.cobalt.youtube.adfree',
+    width: 1920, height: 1080, frameRate: 60, fullScreen: false, videoInfo: { hdrType: 'none' } }] };
+  function start() {
+    homePicture.init({
+      stateDir: dir,
+      telemetry: { hdmiReceiverMap: function (cb) { cb({}); } },
+      oled: { detectOled: function (cb) { cb(true); } },
+      readFile: function () { return null; },
+      Subscription: function (uri, payload, appId, handlers) { this.start = function () { push = handlers.message; }; this.stop = function () {}; },
+      luna: function (uri, payload, cb) {
+        cb(payload.keys[0] === 'pictureMode' ? { returnValue: true, settings: { pictureMode: 'expert1' } } : { returnValue: true, settings: { backlight: 100 } });
+      }
+    });
+    homePicture.want('home', true);
+    homePicture.want('details', true);
+  }
+  start();
+  push(youtube);
+  var written = fs.statSync(file).mtime.getTime();
+  fs.utimesSync(file, new Date(0), new Date(0));
+  push(youtube);
+  assert.equal(fs.statSync(file).mtime.getTime(), 0, 'the same video again is not written again');
+  start();
+  homePicture.picture('app', null, function (r) {
+    assert.deepEqual([r.signal.width, r.signal.height, r.signal.hz, r.signal.hdr, r.assumed], [1920, 1080, 60, 'sdr', false]);
+    assert.equal(r.mode.raw, 'expert1');
+  }, 'com.cobalt.youtube.adfree');
+  // Only the 40 apps noted last are kept.
+  for (var i = 0; i < 45; i++) {
+    var v = JSON.parse(JSON.stringify(youtube));
+    v.video[0].appId = 'app' + i;
+    push(v);
+  }
+  var kept = Object.keys(JSON.parse(fs.readFileSync(file, 'utf8')).played);
+  assert.equal(kept.length, 40);
+  assert.equal(kept[kept.length - 1], 'app44');
+  assert.ok(kept.indexOf('com.cobalt.youtube.adfree') === -1 && kept.indexOf('app4') === -1 && kept.indexOf('app5') !== -1);
+  assert.ok(written > 0);
+  // Played again, an app moves to newest, so it is not the next dropped.
+  push(JSON.parse(JSON.stringify(youtube).replace('com.cobalt.youtube.adfree', 'app5')));
+  kept = Object.keys(JSON.parse(fs.readFileSync(file, 'utf8')).played);
+  assert.equal(kept[kept.length - 1], 'app5');
+  clean();
+  console.log('  ✓ noted videos survive a restart, are written only when they change, the app played last is newest, and the 40 last noted are kept');
+})();
 
 var status = FILES['/proc/lg/hdmi20/port0/status'];
 var pkt = FILES['/proc/lg/hdmi20/port0/pkt'];
