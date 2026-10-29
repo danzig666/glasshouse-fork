@@ -2415,5 +2415,13 @@
  "ctl.keyboard.down": {"text": "Az LG billentyűzete nem látható a tévén. Előbb jelölj ki ott egy szövegmezőt, például egy keresőt vagy egy webcímet. Egyes alkalmazások saját billentyűzetet használnak.", "from": "LG’s keyboard is not up on the TV. Select a text field there first, such as a search box or a web address. Some apps use a keyboard of their own instead."},
  "srv.remoteKeys.homeAssistant": {"text": "Home Assistant", "from": "Home Assistant"},
  "apps.remoteKeys.toHomeAssistant": {"text": "A Home Assistantnak", "from": "To Home Assistant"},
- "srv.remoteKeys.notReported": {"text": "A Home Assistant nem kapja meg ennek a gombnak a lenyomásait", "from": "Home Assistant does not receive this key's presses"}
+ "srv.remoteKeys.notReported": {"text": "A Home Assistant nem kapja meg ennek a gombnak a lenyomásait", "from": "Home Assistant does not receive this key's presses"},
+ "home.language": {"text": "Nyelv", "from": "Language"},
+ "home.languageDesc": {"text": "A Glasshouse Home nyelve, ettől az alkalmazástól függetlenül. Az Automatikus a TV menüjének nyelvét követi.", "from": "The language of Glasshouse Home, apart from this app’s. Auto follows the TV’s menu language."},
+ "home.languageWebDesc": {"text": "A Glasshouse Home nyelve a TV-n, a vezérlőpultoktól függetlenül. Az Automatikus a TV menüjének nyelvét követi. Minden kattintás a következőre lép.", "from": "The language of Glasshouse Home on the TV, apart from the dashboards'. Auto follows the TV's menu language. Each press steps to the next."},
+ "tv.appearance.language.auto": {"text": "Automatikus (a TV nyelve)", "from": "Auto (the TV’s language)"},
+ "tv.appearance.language.hint": {"text": "Az alkalmazás nyelve. Az Automatikus a TV menüjének nyelvét követi.", "from": "The language of this app. Auto follows the TV’s menu language."},
+ "tv.appearance.language.press": {"text": "Nyomja meg az OK gombot: {language}", "from": "Press OK for {language}"},
+ "home.plate.noVideo": {"text": "Még nincs adat lejátszott videóról", "from": "No video noted yet"},
+ "home.plate.sdrMode": {"text": "SDR mód", "from": "SDR mode"}
 }

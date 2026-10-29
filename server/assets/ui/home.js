@@ -142,6 +142,14 @@ function renderHome() {
     updateToggle(pic, { cls: on ? 'good' : 'idle', label: on ? t('common.on', 'On') : t('common.off', 'Off') });
     pic.disabled = !homeWritable();
   }
+  const langRow = q('home-language-row');
+  if (langRow) langRow.hidden = !st.supported.ok;
+  const lang = q('home-language');
+  if (lang) {
+    const code = (st.layout && st.layout.language) || 'auto';
+    updateToggle(lang, { cls: code === 'auto' ? 'idle' : 'good', label: homeLanguageName(code) });
+    lang.disabled = !homeWritable();
+  }
   document.querySelectorAll('.home-show-row').forEach(row => { row.hidden = !st.supported.ok; });
   // Alternative View's rows have no titles, so no app count beside them.
   const altView = !!st.layout && st.layout.view === 'alternative';
@@ -525,6 +533,18 @@ async function homeHideLg() {
 
 function homePicture() {
   homeSaveLayout({ picture: homeLayout.picture !== true });
+}
+
+// Each language named in itself (i18n.js); Auto follows the TV's menu language.
+function homeLanguageName(code) {
+  if (code === 'auto') return t('theme.auto', 'Auto');
+  return (window.I18N && window.I18N.names && window.I18N.names[code]) || code.toUpperCase();
+}
+
+function homeLanguage() {
+  const choices = ['auto', 'en'].concat(window.I18N ? window.I18N.languages : []);
+  const now = (homeLayout && homeLayout.language) || 'auto';
+  homeSaveLayout({ language: choices[(choices.indexOf(now) + 1) % choices.length] });
 }
 
 // The details Glasshouse Home shows unless switched off, and their toggles.

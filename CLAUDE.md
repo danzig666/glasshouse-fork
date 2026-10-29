@@ -26,6 +26,26 @@ pushed:
 - What contributors must do differently: docs/CONTRIBUTING.md.
 - A finding about how LG's software works: docs/development/TV-RESEARCH.md.
 
+## Opening a PR on upstream (rorygallagher2024/glasshouse)
+
+A session with `danzig666/glasshouse-fork` attached often cannot reach upstream:
+`create_pull_request` on owner `rorygallagher2024` says the repository is not
+configured, and `gh api` says GitHub access is not enabled. That is a
+session-layout limit, not missing permission; the fork's owner can always open
+a PR upstream. Do not call it impossible. Instead:
+
+1. Push the work to a branch of this fork.
+2. Start a helper session with the `create_session` tool (claude-code-remote
+   MCP): `source_url: https://github.com/rorygallagher2024/glasshouse`,
+   `clone_depth: 1`, and a self-contained prompt: open ONE PR with GitHub MCP
+   `create_pull_request` (owner `rorygallagher2024`, repo `glasshouse`, base
+   `main`, head `danzig666:<branch>`, `maintainer_can_modify: true`), the exact
+   title and the full body between BEGIN/END markers; check first that no PR
+   from that head is open; change no code, push nothing; reply with the PR URL
+   or the exact GitHub error.
+3. Follow it with `send_later` + `get_session` (its `post_turn_summary`
+   carries the URL) and give the owner the link.
+
 # Code map
 
 The server runs on the TV under node 0.12 (0.10 on webOS 2), so it and the pages the TV's own

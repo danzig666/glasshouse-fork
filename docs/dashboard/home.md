@@ -51,7 +51,7 @@ Glasshouse Home displays a clock and date (following the TV's 12-hour or 24-hour
 
     ---
 
-    When **Picture details** is switched on, a top-right badge shows the active picture preset, OLED light / backlight level, and signal format — live HDMI resolution, refresh rate, chroma, bit depth, HDR format, and VRR, or the last video format played in an app.
+    When **Picture details** is switched on, a top-right badge shows the active picture preset, OLED light / backlight level, and signal format — live HDMI resolution, refresh rate, chroma, bit depth, HDR format, and VRR, or the last video format played in an app. An app with no video noted yet, or an input with nothing coming in, shows **SDR mode** with the picture mode it gets in SDR. Videos are remembered across restarts, for the 40 apps that played one last, and a failed refresh keeps what the plate showed.
 
 -   **Last watched, app count and CEC addresses**
 
@@ -60,6 +60,12 @@ Glasshouse Home displays a clock and date (following the TV's 12-hour or 24-hour
     **Last watched** (the top strip and the marker on that input's tile), **App count** (the "4 of 18 shown" beside Apps) and **CEC addresses** (on each input tile) are on by default, and each can be switched off from either dashboard's Home tab.
 
     The top strip stays empty until the saved layout loads. Switching **Last watched** off leaves the clock in place.
+
+-   **Language**
+
+    ---
+
+    Glasshouse Home's own language, apart from the dashboards': **Auto** follows the TV's menu language, and each press, on either dashboard's Home tab, steps to English or a translation. Home switches to it within a few seconds.
 
 -   **Clock and rows along the bottom**
 
@@ -179,7 +185,7 @@ Rows and tiles can be arranged from the **web dashboard**, the **TV app**, or **
 
 The Home tab's **Home customisation** section holds what applies to whichever Home is the TV's, in one column with each switch on the right:
 
-* While Glasshouse Home is on: **Open Home at power-on**, Glasshouse Home's own options (**Hide LG's Home while the TV starts**, **Picture details**, **Clock and date**, **Rows along the bottom**, **Alternative View**, **Last watched**, **App count**, **CEC addresses**, **Search**, **Fade in and out**).
+* While Glasshouse Home is on: **Open Home at power-on**, Glasshouse Home's own options (**Hide LG's Home while the TV starts**, **Picture details**, **Clock and date**, **Rows along the bottom**, **Alternative View**, **Last watched**, **App count**, **CEC addresses**, **Language**, **Search**, **Fade in and out**).
 * While LG's Home is: **Open Home at power-on**, **Home screen layout** and **Hide home screen system apps**.
 
 Each appears where the TV has it. A TV Glasshouse Home is not offered on, such as a B8 with webOS 4.4, still has the Home tab for these; there it holds Open Home at power-on and Hide home screen system apps. The TV app's Home section has the same rows.

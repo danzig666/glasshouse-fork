@@ -284,6 +284,11 @@ function defaults() {
     // shown greyed out.
     hideUnused: false,
     // { text, accent } as #rrggbb, or null for the view's own colours.
+    // Home's own language, set apart from the TV app's: 'auto' for the TV's
+    // menu language, or a two-letter code. Kept here because Home's browser
+    // storage is the TV app's too (one origin), so a choice stored there
+    // would change both.
+    language: 'auto',
     colours: null,
     // null until chosen: the first start keeps an empty layout an earlier build left.
     hideLgHomeAtStart: null,
@@ -347,6 +352,7 @@ function normalise(raw) {
   d.fade = raw.fade === true;
   d.hideUnused = raw.hideUnused === true;
   d.colours = validColours(raw.colours);
+  d.language = /^(auto|[a-z]{2})$/.test(raw.language) ? raw.language : 'auto';
   if (typeof raw.hideLgHomeAtStart === 'boolean') d.hideLgHomeAtStart = raw.hideLgHomeAtStart;
   if (typeof raw.lgAutoLaunch === 'string' && raw.lgAutoLaunch) d.lgAutoLaunch = raw.lgAutoLaunch;
   if (typeof raw.lgAutoLaunchCheck === 'string' && raw.lgAutoLaunchCheck) d.lgAutoLaunchCheck = raw.lgAutoLaunchCheck;
@@ -474,6 +480,7 @@ function setLayout(body, cb) {
     fade: typeof body.fade === 'boolean' ? body.fade : c.fade,
     hideUnused: typeof body.hideUnused === 'boolean' ? body.hideUnused : c.hideUnused,
     // null puts the view's own colours back.
+    language: /^(auto|[a-z]{2})$/.test(body.language) ? body.language : c.language,
     colours: body.colours !== undefined ? body.colours : c.colours
   });
   if (body.reset === true) {
@@ -499,7 +506,7 @@ function layoutOf(c) {
   return { rows: c.rows, order: c.order, sort: c.sort, hidden: c.hidden, folder: c.folder, channels: c.channels, hintSeen: c.hintSeen,
     searchHintSeen: c.searchHintSeen, picture: c.picture, search: c.search, recommended: c.recommended,
     fade: c.fade, hideUnused: c.hideUnused, showClock: c.showClock, rowsBottom: c.rowsBottom, view: c.view,
-    showLastOn: c.showLastOn, showAppCount: c.showAppCount, showCec: c.showCec, colours: c.colours,
+    showLastOn: c.showLastOn, showAppCount: c.showAppCount, showCec: c.showCec, language: c.language, colours: c.colours,
     // Not saved: { host, by } while the ad blocker blocks LG's search (lib/home-search).
     searchBlocked: search.blocked() };
 }

@@ -723,7 +723,31 @@ function appearanceRows() {
     act: 'toggleTheme',
     press: currentTheme === 'light' ? t('tv.appearance.toDark', 'Press OK to switch to Dark theme') : t('tv.appearance.toLight', 'Press OK to switch to Light theme'),
     hint: t('tv.appearance.theme.hint', 'Switches the dashboard interface between Dark (true black for OLED) and Light theme.')
-  }];
+  }, languageRow()];
+}
+
+// Each language named in itself (i18n.js), so it can be found whatever the app is in.
+function languageName(code) {
+  if (code === 'auto') return t('tv.appearance.language.auto', 'Auto (the TV\u2019s language)');
+  return (window.I18N && window.I18N.names && window.I18N.names[code]) || code.toUpperCase();
+}
+
+// Auto, English, then each translation; OK steps to the next.
+function languageChoices() {
+  return ['auto', 'en'].concat(window.I18N ? window.I18N.languages : []);
+}
+
+function languageRow() {
+  var choices = languageChoices(), now = window.I18N ? window.I18N.stored() : 'auto';
+  var next = choices[(choices.indexOf(now) + 1) % choices.length];
+  return {
+    label: t('server.language.title', 'Language'),
+    value: languageName(now),
+    cls: 'act',
+    act: 'nextLanguage',
+    press: t('tv.appearance.language.press', 'Press OK for {language}', { language: languageName(next) }),
+    hint: t('tv.appearance.language.hint', 'The language of this app. Auto follows the TV\u2019s menu language.')
+  };
 }
 
 /*
@@ -1133,6 +1157,12 @@ function glasshouseHomeRows(d) {
              act: can ? 'homeFade' : null, on: fadeOn,
              press: fadeOn ? t('tv.press.switchOff', 'Press OK to switch off') : t('tv.press.switchOn', 'Press OK to switch on'),
              hint: t('home.fadeDesc', 'Glasshouse Home fades in as it comes on screen, and out as an app, input or channel opens.') });
+    var homeLang = d.layout.language || 'auto', langs = languageChoices();
+    var nextLang = langs[(langs.indexOf(homeLang) + 1) % langs.length];
+    r.push({ label: t('home.language', 'Language'), value: languageName(homeLang), cls: 'act',
+             act: can ? 'homeLanguage' : null, key: nextLang,
+             press: t('tv.appearance.language.press', 'Press OK for {language}', { language: languageName(nextLang) }),
+             hint: t('home.languageDesc', 'The language of Glasshouse Home, apart from this app\u2019s. Auto follows the TV\u2019s menu language.') });
     // OK steps through the presets; colours picked on the browser dashboard show as Custom.
     var presets = d.colourPresets || [], cur = d.layout.colours, at = cur ? -1 : 0;
     for (var pi = 0; pi < presets.length; pi++) if (cur && presets[pi].text === cur.text && presets[pi].accent === cur.accent) at = pi;
@@ -2887,6 +2917,8 @@ function activate() {
       return homeLayout({ recommended: !r.on });
     case 'homeHideUnused':
       return homeLayout({ hideUnused: !r.on });
+    case 'homeLanguage':
+      return homeLayout({ language: r.key });
     case 'homeColours':
       // The first preset is the view's own colours, saved as none chosen.
       return homeLayout({ colours: r.key.id === homeData.colourPresets[0].id ? null : { text: r.key.text, accent: r.key.accent } });
@@ -3074,6 +3106,13 @@ function activate() {
         rows = settingsRows(data.settings || {});
         render();
       }
+      return;
+    case 'nextLanguage':
+      var choices = languageChoices();
+      if (!window.I18N) return;
+      window.I18N.choose(choices[(choices.indexOf(window.I18N.stored()) + 1) % choices.length]);
+      // Every text on the page is in the old language: load it again, on this tab.
+      location.replace(location.pathname + '?tab=' + T().key + '&t=' + Date.now());
       return;
     case 'updateCheck':
       r.value = t('tv.update.checking', 'Checking…');
