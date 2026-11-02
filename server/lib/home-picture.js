@@ -134,6 +134,8 @@ function savePlayed() {
   } catch (e) {
     console.log('home-picture: could not keep the videos noted: ' + e.message);
   }
+}
+
 /*
  * A channel playing on the main sink, from a getStatus reply, or null: the
  * tuner's video, decoded, with contentType dtv. On a G3 (webOS 9.2.2) Sky

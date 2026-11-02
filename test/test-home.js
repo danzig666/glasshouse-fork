@@ -2371,6 +2371,11 @@ step('Glasshouse Home\'s language is kept on the server, auto unless one is pick
       home.setLayout({ language: 'auto' }, function (r3) {
         assert.strictEqual(r3.layout.language, 'auto');
         done();
+      });
+    });
+  });
+});
+
 step('a Glasshouse Home switched on fresh is Pure white, listed first, and one with its own look saved keeps it', function (done) {
   start(null);
   home.status(function (st) {
