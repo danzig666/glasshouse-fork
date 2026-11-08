@@ -20,6 +20,7 @@ var existsQuiet = require('./util').existsQuiet;
 var msg = say.msg;
 var ha = require('./ha');
 var fetchLib = require('./fetch');
+var mtva = require('./mtva');
 var devtools = require('./devtools');
 var names = require('./names');
 
@@ -1320,6 +1321,27 @@ function pipeIptvFile(req, res, file, type) {
  * or password back, except the play URL, which only the TV itself is given:
  * Home plays it in its own <video>.
  */
+/*
+ * MTVA's live channels (lib/mtva): the playlist, and each channel redirected
+ * to a fresh address. For the TV only: the address is good only for the IP
+ * that asked for it.
+ */
+function handleMtvaRoute(req, res, pathname) {
+  if (!fromTV(req)) return send(res, 403, JSON.stringify({ ok: false, error: 'forbidden' }));
+  if (pathname === '/api/mtva/playlist.m3u') {
+    var host = String(req.headers.host || '127.0.0.1:' + (config.port || 8080));
+    res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(mtva.playlist('http://' + host));
+  }
+  var m = /^\/api\/mtva\/([a-z0-9]+)\.m3u8$/.exec(pathname);
+  if (!m || !mtva.has(m[1])) return send(res, 404, JSON.stringify({ ok: false, error: 'not found' }));
+  mtva.streamUrl(m[1], function (err, url) {
+    if (err) return send(res, 502, JSON.stringify({ ok: false, error: 'no stream' }));
+    res.writeHead(302, { Location: url, 'Cache-Control': 'no-store' });
+    res.end();
+  });
+}
+
 function handleIptvRoute(req, res, u, pathname) {
   function reply(r) { send(res, r && r.ok === false ? 400 : 200, JSON.stringify(r)); }
   var qs = u.query || {};
@@ -2059,6 +2081,8 @@ function handleRequest(req, res) {
   }
 
   if (pathname.indexOf('/api/iptv/') === 0 && iptvModule) return handleIptvRoute(req, res, u, pathname);
+
+  if (pathname.indexOf('/api/mtva/') === 0) return handleMtvaRoute(req, res, pathname);
 
   if (pathname === '/api/quickaccess' && req.method === 'POST') {
     if (!config.allowControl) {

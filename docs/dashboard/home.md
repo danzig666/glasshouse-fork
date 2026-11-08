@@ -139,6 +139,13 @@ same **M3U link** or **Xtream login** you gave IPTV Smarters, TiviMate or a
 similar app, in the **Internet TV** section of the **Home** tab, with a guide
 (XMLTV) link if the playlist has none. An Xtream login brings its own guide.
 
+MTVA's free live channels, M1, M2, M5 and Duna, come as a playlist from the
+TV itself: add `http://127.0.0.1:8080/api/mtva/playlist.m3u` as an M3U link.
+MédiaKlikk gives each channel's stream only to the address that asks for it
+and only for a while, so each channel points back at Glasshouse, which asks
+MédiaKlikk for a fresh one as the channel starts. M4 Sport and Duna World are
+not offered: MédiaKlikk gives them to its own player only.
+
 The playlist is read on the TV, in the background, and again each night;
 the guide every six hours. Each playlist shows how many live channels it has,
 when it and its guide were last read, when the account ends and how many
